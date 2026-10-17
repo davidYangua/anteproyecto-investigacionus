@@ -1,0 +1,183 @@
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-muted);
+}
+
+/* --- Animaciones de Modales y Notificaciones --- */
+@keyframes backdropFadeIn {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(4px);
+  }
+}
+
+@keyframes modalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-backdrop {
+  animation: backdropFadeIn var(--transition-normal) forwards;
+}
+
+.modal-content {
+  animation: modalScaleIn var(--transition-normal) forwards;
+}
+
+.toast-item {
+  animation: toastSlideIn var(--transition-fast) forwards;
+}
+
+/* --- Diagrama Sankey / Flujo SVG (D3.js) --- */
+#nx-sankey-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.sankey-node rect {
+  cursor: pointer;
+  rx: 6px;
+  ry: 6px;
+  transition: opacity var(--transition-fast), filter var(--transition-fast);
+}
+
+.sankey-node rect:hover {
+  filter: brightness(1.15);
+}
+
+.sankey-node text {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  fill: var(--ink-primary);
+  pointer-events: none;
+}
+
+.sankey-link {
+  fill: none;
+  stroke-opacity: 0.45;
+  transition: stroke-opacity var(--transition-fast), stroke var(--transition-fast);
+}
+
+.sankey-link:hover {
+  stroke-opacity: 0.8;
+}
+
+.sankey-tooltip {
+  position: absolute;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink-primary);
+  pointer-events: none;
+  z-index: 50;
+  transition: opacity var(--transition-fast);
+}
+
+/* --- Mapa de Calor (Heatmap Metodológico) --- */
+.heatmap-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.heatmap-cell {
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.heatmap-cell:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.hm-good {
+  background-color: var(--status-ok-soft);
+  border-color: var(--status-ok);
+  color: var(--status-ok);
+}
+
+.hm-mid {
+  background-color: var(--status-warn-soft);
+  border-color: var(--status-warn);
+  color: var(--status-warn);
+}
+
+.hm-low {
+  background-color: var(--status-bad-soft);
+  border-color: var(--status-bad);
+  color: var(--status-bad);
+}
+
+/* --- Cajas de Código y Prompts --- */
+pre.tpl {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.6;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+pre.decl {
+  white-space: pre-wrap;
+  background: var(--surface-hover);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Focus visible accesible */
+:focus-visible {
+  outline: 2px solid var(--brand-gold);
+  outline-offset: 2px;
+}

@@ -1,0 +1,111 @@
+:root {
+  /* --- Paleta Institucional (Modo Claro) --- */
+  --bg-main: #F8FAFC;
+  --surface: #FFFFFF;
+  --surface-hover: #F1F5F9;
+  --surface-active: #E2E8F0;
+  
+  --line: #E2E8F0;
+  --line-strong: #CBD5E1;
+  
+  --ink-primary: #0F172A;
+  --ink-secondary: #475569;
+  --ink-muted: #64748B;
+  
+  /* Colores de Marca USS (Azul Marino & Dorado Enterprise) */
+  --brand-primary: #0A2540;
+  --brand-primary-hover: #13385B;
+  --brand-soft: #EFF6FF;
+  --brand-on-primary: #FFFFFF;
+  
+  --brand-gold: #C5A059;
+  --brand-gold-soft: #FDF8EF;
+  --brand-gold-hover: #B38E46;
+  
+  /* Estados Clínicos y Metodológicos */
+  --status-ok: #059669;
+  --status-ok-soft: #ECFDF5;
+  --status-warn: #D97706;
+  --status-warn-soft: #FFFBEB;
+  --status-bad: #DC2626;
+  --status-bad-soft: #FEF2F2;
+  
+  /* Tutor IA */
+  --gpt-color: #10A37F;
+  --gpt-soft: #E6F7F2;
+  --gpt-hover: #0E8E6E;
+
+  /* Tipografía */
+  --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-body: 'Source Sans 3', system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+
+  /* Elevaciones & Sombras */
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -4px rgba(15, 23, 42, 0.05);
+
+  /* Bordes & Transiciones */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+  
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- Paleta Modo Oscuro --- */
+[data-theme="dark"] {
+  --bg-main: #0B0F17;
+  --surface: #151C28;
+  --surface-hover: #1E293B;
+  --surface-active: #334155;
+  
+  --line: #26334D;
+  --line-strong: #334155;
+  
+  --ink-primary: #F8FAFC;
+  --ink-secondary: #CBD5E1;
+  --ink-muted: #94A3B8;
+  
+  --brand-primary: #38BDF8;
+  --brand-primary-hover: #7DD3FC;
+  --brand-soft: #1E293B;
+  --brand-on-primary: #0F172A;
+  
+  --brand-gold: #E5C178;
+  --brand-gold-soft: #2A2418;
+  --brand-gold-hover: #F3D28C;
+  
+  --status-ok: #34D399;
+  --status-ok-soft: #064E3B;
+  --status-warn: #FBBF24;
+  --status-warn-soft: #451A03;
+  --status-bad: #F87171;
+  --status-bad-soft: #451211;
+  
+  --gpt-color: #34D399;
+  --gpt-soft: #064E3B;
+  --gpt-hover: #6EE7B7;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+}
+
+/* Configuración global del documento */
+html {
+  font-family: var(--font-body);
+  background-color: var(--bg-main);
+  color: var(--ink-primary);
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}

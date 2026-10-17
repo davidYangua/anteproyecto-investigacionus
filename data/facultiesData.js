@@ -6,7 +6,14 @@
 export const FACULTIES_DATA = [
   {
     id: "f-salud",
-    name: "Facultad de Ciencias de la Salud",
+    nombre: "Facultad de Ciencias de la Salud",
+    escuelas: [
+      "Enfermería",
+      "Medicina Humana",
+      "Psicología",
+      "Estomatología",
+      "Tecnología Médica"
+    ],
     schools: [
       {
         id: "esc-enfermeria",
@@ -44,12 +51,27 @@ export const FACULTIES_DATA = [
           "Odontología restauradora, materiales y estética",
           "Cirugía bucal, patología y rehabilitación"
         ]
+      },
+      {
+        id: "esc-tecnologia-medica",
+        name: "Escuela Profesional de Tecnología Médica",
+        lines: [
+          "Laboratorio clínico y anatomía patológica",
+          "Terapia física y rehabilitación"
+        ]
       }
     ]
   },
   {
     id: "f-ingenieria",
-    name: "Facultad de Ingeniería, Arquitectura y Urbanismo",
+    nombre: "Facultad de Ingeniería, Arquitectura y Urbanismo",
+    escuelas: [
+      "Ingeniería Civil",
+      "Ingeniería Industrial",
+      "Ingeniería de Sistemas",
+      "Ingeniería Agroindustrial",
+      "Arquitectura"
+    ],
     schools: [
       {
         id: "esc-sistemas",
@@ -79,6 +101,14 @@ export const FACULTIES_DATA = [
         ]
       },
       {
+        id: "esc-agroindustrial",
+        name: "Escuela Profesional de Ingeniería Agroindustrial",
+        lines: [
+          "Procesos agroindustriales, tecnología de alimentos y conservación",
+          "Gestión de la calidad e inocuidad agroalimentaria"
+        ]
+      },
+      {
         id: "esc-arquitectura",
         name: "Escuela Profesional de Arquitectura",
         lines: [
@@ -91,7 +121,13 @@ export const FACULTIES_DATA = [
   },
   {
     id: "f-empresariales",
-    name: "Facultad de Ciencias Empresariales",
+    nombre: "Facultad de Ciencias Empresariales",
+    escuelas: [
+      "Administración",
+      "Contabilidad",
+      "Comercio y Negocios Internacionales",
+      "Turismo y Negocios"
+    ],
     schools: [
       {
         id: "esc-administracion",
@@ -112,19 +148,31 @@ export const FACULTIES_DATA = [
         ]
       },
       {
+        id: "esc-comercio",
+        name: "Escuela Profesional de Comercio y Negocios Internacionales",
+        lines: [
+          "Comercio exterior, logística internacional y aduanas",
+          "Estrategias de internacionalización de Mipymes"
+        ]
+      },
+      {
         id: "esc-turismo",
         name: "Escuela Profesional de Turismo y Negocios",
         lines: [
           "Gestión del patrimonio turístico, ecoturismo y sostenibilidad",
-          "Marketing turístico, hotelería y calidad de servicio",
-          "Comercio internacional y negocios globales"
+          "Marketing turístico, hotelería y calidad de servicio"
         ]
       }
     ]
   },
   {
     id: "f-derecho",
-    name: "Facultad de Derecho y Humanidades",
+    nombre: "Facultad de Derecho y Humanidades",
+    escuelas: [
+      "Derecho",
+      "Educación",
+      "Ciencias de la Comunicación"
+    ],
     schools: [
       {
         id: "esc-derecho",
