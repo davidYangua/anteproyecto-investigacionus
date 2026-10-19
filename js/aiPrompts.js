@@ -20,13 +20,13 @@ REGLAS DE EVALUACIÓN:
  * @param {Object} state 
  * @returns {Object}
  */
-export function buildMetadataJSON(state) {
+export function buildMetadataJSON(state = {}) {
   const student = state.student || {};
   const project = state.project || {};
 
   return {
     institucion: "Universidad Señor de Sipán (USS)",
-    curso: "Metodología de la Investigación Científica - 2026-II",
+    curso: "Metodología de la Investigación Científica",
     estudiante: {
       nombre: student.nombre || "No especificado",
       facultad: student.facultad || "No especificada",
@@ -40,6 +40,7 @@ export function buildMetadataJSON(state) {
       poblacion: project.pob || "No declarada",
       ambito: project.amb || "No declarado",
       periodo: project.per || "No declarado",
+      enfoque_metodologico: project.enf || "cuanti",
       pregunta_general: project.preg || "No declarada",
       teoria_principal: project.teo || "No declarada",
       objetivo_general: project.obj || "No declarado",
@@ -57,7 +58,7 @@ export function buildMetadataJSON(state) {
  * @param {Object} state 
  * @returns {string}
  */
-export function buildHiloPrompt(state) {
+export function buildHiloPrompt(state = {}) {
   const metadata = buildMetadataJSON(state);
   const coherenceEvaluation = evaluateCoherenceChain(state.project || {});
 
@@ -83,9 +84,9 @@ ESTRUCTURA DE TU RESPUESTA:
  * @param {Object} state 
  * @returns {string}
  */
-export function buildSectionPrompt(secId, state) {
+export function buildSectionPrompt(secId, state = {}) {
   const sec = SECTIONS_DATA.find(s => s.id === secId);
-  const model = MODELS_DATA[secId];
+  const model = MODELS_DATA ? MODELS_DATA[secId] : null;
   const draft = (state.drafts && state.drafts[secId]) || "";
   const metadata = buildMetadataJSON(state);
 
@@ -103,7 +104,7 @@ ${JSON.stringify(metadata, null, 2)}
 CRITERIOS DE EVALUACIÓN DEL MANUAL:
 ${sec.crit.map((c, i) => `${i + 1}.${c}`).join("\n")}
 
-${model ? `ORDEN ESPERADO DE PÁRRAFOS:\n${model.steps.map((s, i) => `${i + 1}. ${s[0]}: ${s[1]}`).join("\n")}` : ""}
+${model && model.steps ? `ORDEN ESPERADO DE PÁRRAFOS:\n${model.steps.map((s, i) => `${i + 1}. ${s[0]}: ${s[1]}`).join("\n")}` : ""}
 
 BORRADOR PRESENTADO POR EL ESTUDIANTE:
 """
@@ -123,7 +124,7 @@ DICTAMEN: 1=C; 2=P; 3=N... (Un valor por cada uno de los ${sec.crit.length} crit
  * @param {Object} state 
  * @returns {string}
  */
-export function buildReportPrompt(state) {
+export function buildReportPrompt(state = {}) {
   const metadata = buildMetadataJSON(state);
   const drafts = state.drafts || {};
 

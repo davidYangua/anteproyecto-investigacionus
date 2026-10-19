@@ -1,6 +1,7 @@
 /**
  * NEXO Research Studio - Estación de Redacción y Ruta de 16 Semanas
  * Archivo: js/sectionStudio.js
+ * Autor / Dirección Metodológica: Ing. Percy Castro Mejía
  */
 
 import { SECTIONS_DATA } from "../data/sectionsData.js";
@@ -11,23 +12,21 @@ let currentModelView = "orden";
 
 /**
  * Inicializa la Estación de Redacción y sus oyentes de eventos
- * @param {Object} state Estado global de la aplicación
- * @param {Function} onDraftChange Callback al modificar el borrador
- * @param {Function} onCheckChange Callback al marcar un criterio de autoevaluación
  */
 export function initSectionStudio(state, onDraftChange, onCheckChange) {
   const routeListEl = document.getElementById("routelist");
   const routeSelectEl = document.getElementById("routeselect");
   const draftEl = document.getElementById("draft");
   const modelBtns = document.querySelectorAll("[data-mv]");
+  const readDictBtn = document.getElementById("readdict");
 
   // Renderizar la lista de la ruta de 16 semanas
   renderRouteList(SECTIONS_DATA, currentSectionId, routeListEl, routeSelectEl, (secId) => {
     currentSectionId = secId;
-    renderSectionDetails(currentSectionId, state);
+    renderSectionDetails(currentSectionId, state, onCheckChange);
   });
 
-  // Evento para cambiar de modo de vista del modelo (Orden, Ejemplo, Plantilla)
+  // Cambiar modo de vista del modelo (Orden de párrafos, Ejemplo anotado, Plantilla)
   modelBtns.forEach(btn => {
     btn.addEventListener("click", () => {
       currentModelView = btn.getAttribute("data-mv");
@@ -37,18 +36,104 @@ export function initSectionStudio(state, onDraftChange, onCheckChange) {
     });
   });
 
-  // Evento de edición del borrador
+  // Evento de edición del borrador en tiempo real
   if (draftEl) {
     draftEl.addEventListener("input", (e) => {
       const text = e.target.value;
+      if (!state.drafts) state.drafts = {};
+      state.drafts[currentSectionId] = text;
+      
       if (onDraftChange) onDraftChange(currentSectionId, text);
       const sec = SECTIONS_DATA.find(s => s.id === currentSectionId);
       analyzeDraftSignals(text, sec);
     });
   }
 
+  // Evento para parsear, calibrar y REGISTRAR dictámenes devueltos por la IA
+  if (readDictBtn) {
+    readDictBtn.addEventListener("click", () => {
+      const trespEl = document.getElementById("tresp");
+      const dictMsgEl = document.getElementById("dictmsg");
+      const dictOutEl = document.getElementById("dictout");
+      const tutorStateEl = document.getElementById("tutorstate");
+
+      if (!trespEl || !trespEl.value.trim()) {
+        if (dictMsgEl) {
+          dictMsgEl.textContent = "Pegue primero la respuesta de ChatGPT con el dictamen.";
+          dictMsgEl.className = "text-xs font-mono text-rose-500 font-semibold";
+        }
+        return;
+      }
+
+      const rawText = trespEl.value.trim();
+      const dictamenData = parseAIDictamen(rawText);
+      const secObj = SECTIONS_DATA.find(s => s.id === currentSectionId);
+      const secTitle = secObj ? `[${secObj.code}] ${secObj.title}` : currentSectionId;
+
+      // Generar cadena de dictamen legible
+      let dictamenStr = "Dictamen procesado";
+      if (dictamenData) {
+        dictamenStr = Object.entries(dictamenData).map(([k, v]) => `${k}=${v}`).join("; ");
+      } else {
+        const match = rawText.match(/DICTAMEN:\s*([^\n]+)/i);
+        if (match) dictamenStr = match[1].trim();
+      }
+
+      // REGISTRO UNIFICADO EN STATE.LOG (Pestaña 05 + Reporte Word)
+      if (!state.log) state.log = [];
+
+      const logEntry = {
+        tipo: "ia",
+        id: `ia_${Date.now()}`,
+        fecha: new Date().toLocaleDateString("es-PE") + " " + new Date().toLocaleTimeString("es-PE", { hour: '2-digit', minute: '2-digit' }),
+        timestamp: new Date().toISOString(),
+        seccionId: currentSectionId,
+        seccion: secTitle,
+        sec: secTitle,
+        herramienta: "ChatGPT (Tutor IA)",
+        tool: "ChatGPT (Tutor IA)",
+        dictamen: dictamenStr,
+        ai: rawText,
+        decision: "Dictamen auditado e incorporado al borrador de investigación.",
+        dec: "Auditoría Aceptada",
+        why: "Evaluación procesada desde la Estación de Redacción"
+      };
+
+      // Reemplazar si ya existía registro de esta sección o añadir
+      const prevIndex = state.log.findIndex(l => l.seccionId === currentSectionId || l.sec === secTitle);
+      if (prevIndex >= 0) {
+        state.log[prevIndex] = logEntry;
+      } else {
+        state.log.push(logEntry);
+      }
+
+      // Actualizar pastilla de estado (#tutorstate)
+      if (tutorStateEl) {
+        tutorStateEl.textContent = `Calibrado (${dictamenStr})`;
+        tutorStateEl.className = "px-3 py-1 bg-emerald-600 text-white text-xs font-mono rounded-full font-bold shadow-sm";
+      }
+
+      if (dictMsgEl) {
+        dictMsgEl.textContent = "¡Dictamen calibrado y registrado en bitácora!";
+        dictMsgEl.className = "text-xs font-mono text-emerald-600 dark:text-emerald-400 font-semibold";
+      }
+
+      if (dictOutEl) {
+        dictOutEl.innerHTML = `
+          <div class="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 rounded-xl text-xs space-y-1 mt-2">
+            <strong class="text-emerald-900 dark:text-emerald-200 block">Resultado de la Auditoría Registrado:</strong>
+            <p class="font-mono text-emerald-800 dark:text-emerald-300">${dictamenStr}</p>
+          </div>
+        `;
+      }
+
+      // Notificar cambio de borrador
+      if (onDraftChange) onDraftChange(currentSectionId, draftEl ? draftEl.value : "");
+    });
+  }
+
   // Carga inicial
-  renderSectionDetails(currentSectionId, state);
+  renderSectionDetails(currentSectionId, state, onCheckChange);
 }
 
 /**
@@ -106,7 +191,7 @@ export function renderRouteList(sections, activeId, listEl, selectEl, onSelect) 
 /**
  * Renderiza los detalles de la sección seleccionada en el panel principal
  */
-export function renderSectionDetails(secId, state) {
+export function renderSectionDetails(secId, state, onCheckChange) {
   const sec = SECTIONS_DATA.find(s => s.id === secId);
   if (!sec) return;
 
@@ -117,6 +202,7 @@ export function renderSectionDetails(secId, state) {
   const pruebaEl = document.getElementById("s-prueba");
   const draftEl = document.getElementById("draft");
   const checksEl = document.getElementById("checks");
+  const tutorStateEl = document.getElementById("tutorstate");
 
   if (wkEl) wkEl.textContent = `${sec.wk} · Código ${sec.code}`;
   if (titleEl) titleEl.textContent = sec.title;
@@ -133,7 +219,18 @@ export function renderSectionDetails(secId, state) {
   if (prodEl) prodEl.textContent = sec.prod;
   if (pruebaEl) pruebaEl.textContent = sec.prueba;
 
-  // Cargar borrador del estado
+  // Actualizar pastilla #tutorstate si ya existe dictamen para esta sección
+  const secTitle = `[${sec.code}] ${sec.title}`;
+  const existingLog = (state.log || []).find(l => l.seccionId === secId || l.sec === secTitle || l.seccion === secTitle);
+  if (existingLog && tutorStateEl) {
+    tutorStateEl.textContent = `Calibrado ✓`;
+    tutorStateEl.className = "px-3 py-1 bg-emerald-600 text-white text-xs font-mono rounded-full font-bold shadow-sm";
+  } else if (tutorStateEl) {
+    tutorStateEl.textContent = "Sin dictamen";
+    tutorStateEl.className = "px-3 py-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs font-mono rounded-full text-slate-500";
+  }
+
+  // Cargar borrador guardado
   const savedDraft = (state.drafts && state.drafts[secId]) || "";
   if (draftEl) {
     draftEl.value = savedDraft;
@@ -154,7 +251,7 @@ export function renderSectionDetails(secId, state) {
       li.className = "flex items-start gap-2.5 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition";
 
       li.innerHTML = `
-        <input type="checkbox" id="chk-${secId}-${idx}" ${isChecked ? "checked" : ""} class="mt-0.5 rounded border-slate-300 text-nexo-navy focus:ring-nexo-gold">
+        <input type="checkbox" id="chk-${secId}-${idx}" ${isChecked ? "checked" : ""} class="mt-0.5 rounded border-slate-300 text-nexo-navy focus:ring-nexo-gold cursor-pointer">
         <label for="chk-${secId}-${idx}" class="text-xs text-slate-700 dark:text-slate-300 cursor-pointer leading-normal flex-1">
           ${critText}
         </label>
@@ -170,6 +267,7 @@ export function renderSectionDetails(secId, state) {
         }
         if (!state.checks) state.checks = {};
         state.checks[secId] = currentArr;
+        if (onCheckChange) onCheckChange(secId, currentArr);
       });
 
       checksEl.appendChild(li);
@@ -184,9 +282,9 @@ export function renderModelView(secId, mode) {
   const mbodyEl = document.getElementById("mbody");
   if (!mbodyEl) return;
 
-  const modelData = MODELS_DATA[secId];
+  const modelData = MODELS_DATA ? MODELS_DATA[secId] : null;
   if (!modelData) {
-    mbodyEl.innerHTML = `<p class="text-xs text-slate-400 italic">No hay un modelo específico registrado para esta sección. Siga las pautas del docente.</p>`;
+    mbodyEl.innerHTML = `<p class="text-xs text-slate-400 italic">No hay un modelo específico registrado para esta sección. Siga las pautas institucionales del docente.</p>`;
     return;
   }
 
@@ -252,13 +350,11 @@ export function analyzeDraftSignals(draftText, sec) {
   const words = draftText.trim().split(/\s+/).filter(w => w.length > 0);
   const wordCount = words.length;
 
-  // Contador de palabras
   const countBadge = document.createElement("span");
   countBadge.className = "px-2.5 py-1 rounded-md text-[11px] font-mono font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700";
   countBadge.textContent = `${wordCount} palabras`;
   signalsEl.appendChild(countBadge);
 
-  // Alerta de Extensión
   if (sec && sec.ext) {
     const [minW, maxW] = sec.ext;
     const extBadge = document.createElement("span");
@@ -275,7 +371,6 @@ export function analyzeDraftSignals(draftText, sec) {
     signalsEl.appendChild(extBadge);
   }
 
-  // Detección de Adjetivos Valorativos Subjetivos
   const subjectiveWords = ["grave", "alarmante", "preocupante", "pésimo", "terrible", "desastroso", "increíble"];
   const foundSubj = subjectiveWords.filter(sw => draftText.toLowerCase().includes(sw));
   if (foundSubj.length > 0) {
@@ -288,7 +383,6 @@ export function analyzeDraftSignals(draftText, sec) {
 
 /**
  * Parsea el dictamen estructurado emitido por la IA
- * Expectativa de formato: DICTAMEN: 1=C; 2=P; 3=N...
  */
 export function parseAIDictamen(text) {
   if (!text) return null;

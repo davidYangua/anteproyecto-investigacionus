@@ -271,3 +271,17 @@ export const SECTIONS_DATA = [
     ]
   }
 ];
+
+/**
+ * Obtiene una sección de la ruta por su id único (ej. "s1", "s11", "s14")
+ */
+export function getSectionById(secId) {
+  return SECTIONS_DATA.find(s => s.id === secId) || SECTIONS_DATA[0];
+}
+
+/**
+ * Retorna todas las secciones registradas
+ */
+export function getAllSections() {
+  return SECTIONS_DATA;
+}

@@ -1,126 +1,179 @@
 /**
- * NEXO Research Studio - Diagrama Sankey de Trazabilidad Metodológica (D3.js)
+ * NEXO Research Studio - Diagrama Sankey Universal de Operacionalización
  * Archivo: js/sankeyChart.js
+ * Dirección Metodológica: Ing. Percy Castro Mejía
  */
+
+let googleChartsLoaded = false;
 
 /**
- * Genera la estructura de Nodos y Enlaces para el Sankey a partir del estado actual
- * @param {Object} state Estado global del proyecto
- * @returns {Object} Objeto con arreglos { nodes, links }
+ * Carga asíncrona de la librería Google Charts (Sankey)
  */
-export function buildSankeyDataFromState(state) {
-  const project = state.project || {};
+function loadGoogleCharts() {
+  return new Promise((resolve, reject) => {
+    if (googleChartsLoaded || (window.google && window.google.visualization && window.google.visualization.Sankey)) {
+      googleChartsLoaded = true;
+      return resolve();
+    }
 
-  const v1 = project.v1 || "Variable 1 (Sin definir)";
-  const v2 = project.v2 || "Variable 2 (Sin definir)";
-  const teo = project.teo || "Sin Teoría Asignada";
-  const dis = project.dis ? project.dis.toUpperCase() : "Diseño NO Asignado";
-  const status = "Evaluación de Coherencia";
-
-  const nodes = [
-    { name: v1, category: "variable" },
-    { name: v2, category: "variable" },
-    { name: teo, category: "teoria" },
-    { name: dis, category: "diseno" },
-    { name: status, category: "estado" }
-  ];
-
-  const links = [
-    { source: 0, target: 2, value: 1 },
-    { source: 1, target: 2, value: 1 },
-    { source: 2, target: 3, value: 2 },
-    { source: 3, target: 4, value: 2 }
-  ];
-
-  return { nodes, links };
+    if (!window.google) {
+      const script = document.createElement("script");
+      script.src = "https://www.gstatic.com/charts/loader.js";
+      script.onload = () => {
+        window.google.charts.load("current", { packages: ["sankey"] });
+        window.google.charts.setOnLoadCallback(() => {
+          googleChartsLoaded = true;
+          resolve();
+        });
+      };
+      script.onerror = () => reject(new Error("No se pudo cargar Google Charts CDN"));
+      document.head.appendChild(script);
+    } else {
+      window.google.charts.load("current", { packages: ["sankey"] });
+      window.google.charts.setOnLoadCallback(() => {
+        googleChartsLoaded = true;
+        resolve();
+      });
+    }
+  });
 }
 
 /**
- * Renderiza el gráfico Sankey dentro del contenedor SVG
- * @param {string} containerSelector Selector CSS del contenedor SVG o wrapper
+ * Genera la matriz de relaciones [Origen, Destino, Peso] respetando la jerarquía V -> D -> I
  * @param {Object} state Estado global de la aplicación
+ * @returns {Array<Array>} Filas de datos para el gráfico Sankey
  */
-export function renderSankeyChart(containerSelector, state) {
-  const wrapper = document.querySelector(containerSelector);
-  if (!wrapper || !window.d3 || !window.d3.sankey) return;
+export function buildSankeyDataFromState(state = {}) {
+  const project = state.project || {};
 
-  wrapper.innerHTML = "";
+  const v1Name = project.v1 ? project.v1.trim() : "Variable 1";
+  const v2Name = project.v2 ? project.v2.trim() : "Variable 2";
 
-  const data = buildSankeyDataFromState(state);
-  const width = wrapper.clientWidth || 600;
-  const height = wrapper.clientHeight || 280;
+  // Intentar parsear número total de ítems de las variables o asignar pesos base
+  const itemsV1Total = parseInt(project.i1, 10) || 12;
+  const itemsV2Total = parseInt(project.i2, 10) || 12;
 
-  const svg = d3.select(wrapper)
-    .append("svg")
-    .attr("id", "nx-sankey-svg")
-    .attr("viewBox", `0 0 ${width} ${height}`)
-    .attr("width", "100%")
-    .attr("height", "100%");
-
-  // Configuración del generador d3-sankey
-  const sankey = d3.sankey()
-    .nodeWidth(16)
-    .nodePadding(18)
-    .extent([[10, 10], [width - 10, height - 10]]);
-
-  const { nodes, links } = sankey({
-    nodes: data.nodes.map(d => Object.assign({}, d)),
-    links: data.links.map(d => Object.assign({}, d))
-  });
-
-  // Paleta de colores enterprise según categoría
-  const colorMap = {
-    variable: "#0A2540",
-    teoria: "#C5A059",
-    diseno: "#059669",
-    estado: "#38BDF8"
+  // Estructura de dimensiones por variable (usada si el usuario no tiene operacionalización personalizada)
+  const operData = project.operacionalizacion || {
+    v1: {
+      nombre: `V1: ${v1Name}`,
+      dimensiones: [
+        { nombre: `D1.1 (Cognitiva - ${v1Name})`, peso: Math.ceil(itemsV1Total * 0.4) },
+        { nombre: `D1.2 (Procedimental - ${v1Name})`, peso: Math.floor(itemsV1Total * 0.35) },
+        { nombre: `D1.3 (Actitudinal - ${v1Name})`, peso: Math.max(1, itemsV1Total - Math.ceil(itemsV1Total * 0.4) - Math.floor(itemsV1Total * 0.35)) }
+      ]
+    },
+    v2: {
+      nombre: `V2: ${v2Name}`,
+      dimensiones: [
+        { nombre: `D2.1 (Eficacia - ${v2Name})`, peso: Math.ceil(itemsV2Total * 0.5) },
+        { nombre: `D2.2 (Eficiencia - ${v2Name})`, peso: Math.max(1, itemsV2Total - Math.ceil(itemsV2Total * 0.5)) }
+      ]
+    }
   };
 
-  // Tooltip emergente
-  let tooltip = d3.select("body").select(".sankey-tooltip");
-  if (tooltip.empty()) {
-    tooltip = d3.select("body")
-      .append("div")
-      .attr("class", "sankey-tooltip opacity-0");
+  const rows = [];
+
+  // Mapear Variable 1 -> Dimensiones -> Ítems
+  if (operData.v1 && operData.v1.dimensiones) {
+    operData.v1.dimensiones.forEach(dim => {
+      const itemLabel = `${dim.peso} Ítem(s) [${dim.nombre.split(' ')[0]}]`;
+      // Enlace 1: Variable -> Dimensión
+      rows.push([operData.v1.nombre, dim.nombre, dim.peso]);
+      // Enlace 2: Dimensión -> Indicadores / Ítems
+      rows.push([dim.nombre, itemLabel, dim.peso]);
+    });
   }
 
-  // Renderizado de Enlaces (Flujos Curvos Bézier)
-  svg.append("g")
-    .selectAll("path")
-    .data(links)
-    .join("path")
-    .attr("class", "sankey-link")
-    .attr("d", d3.sankeyLinkHorizontal())
-    .attr("stroke", "#C5A059")
-    .attr("stroke-width", d => Math.max(1, d.width))
-    .on("mouseover", (event, d) => {
-      tooltip
-        .style("opacity", 1)
-        .html(`<strong>Flujo:</strong> ${d.source.name} &rarr; ${d.target.name}`)
-        .style("left", `${event.pageX + 12}px`)
-        .style("top", `${event.pageY - 28}px`);
-    })
-    .on("mouseout", () => tooltip.style("opacity", 0));
+  // Mapear Variable 2 -> Dimensiones -> Ítems
+  if (operData.v2 && operData.v2.dimensiones) {
+    operData.v2.dimensiones.forEach(dim => {
+      const itemLabel = `${dim.peso} Ítem(s) [${dim.nombre.split(' ')[0]}]`;
+      // Enlace 1: Variable -> Dimensión
+      rows.push([operData.v2.nombre, dim.nombre, dim.peso]);
+      // Enlace 2: Dimensión -> Indicadores / Ítems
+      rows.push([dim.nombre, itemLabel, dim.peso]);
+    });
+  }
 
-  // Renderizado de Nodos
-  const node = svg.append("g")
-    .selectAll("g")
-    .data(nodes)
-    .join("g")
-    .attr("class", "sankey-node");
+  return rows;
+}
 
-  node.append("rect")
-    .attr("x", d => d.x0)
-    .attr("y", d => d.y0)
-    .attr("height", d => d.y1 - d.y0)
-    .attr("width", d => d.x1 - d.x0)
-    .attr("fill", d => colorMap[d.category] || "#64748B");
+/**
+ * Renderiza el diagrama Sankey universal de operacionalización
+ * @param {string|HTMLElement} containerSelector 
+ * @param {Object} state 
+ */
+export async function renderSankeyChart(containerSelector, state = {}) {
+  const container = typeof containerSelector === "string" 
+    ? document.querySelector(containerSelector) 
+    : containerSelector;
 
-  // Etiquetas de Nodos
-  node.append("text")
-    .attr("x", d => d.x0 < width / 2 ? d.x1 + 8 : d.x0 - 8)
-    .attr("y", d => (d.y1 + d.y0) / 2)
-    .attr("dy", "0.35em")
-    .attr("text-anchor", d => d.x0 < width / 2 ? "start" : "end")
-    .text(d => d.name);
+  if (!container) return;
+
+  try {
+    await loadGoogleCharts();
+
+    const dataRows = buildSankeyDataFromState(state);
+
+    if (!dataRows || dataRows.length === 0) {
+      container.innerHTML = `
+        <div class="p-6 text-center text-xs font-mono text-slate-400">
+          Ingrese las variables en la Pestaña 01 para visualizar la matriz de operacionalización.
+        </div>
+      `;
+      return;
+    }
+
+    const dataTable = new window.google.visualization.DataTable();
+    dataTable.addColumn("string", "Origen");
+    dataTable.addColumn("string", "Destino");
+    dataTable.addColumn("number", "Cantidad de Ítems / Indicadores");
+    dataTable.addRows(dataRows);
+
+    const isDark = document.documentElement.classList.contains("dark");
+
+    const options = {
+      width: "100%",
+      height: 320,
+      sankey: {
+        node: {
+          colors: [
+            "#0A2540", // NEXO Navy
+            "#1E3A8A", // Deep Blue
+            "#C5A059", // NEXO Gold
+            "#059669", // Emerald
+            "#0284C7", // Sky Blue
+            "#D97706", // Amber
+            "#6366F1"  // Indigo
+          ],
+          label: {
+            fontName: "Inter, system-ui, sans-serif",
+            fontSize: 11,
+            color: isDark ? "#F8FAFC" : "#0F172A",
+            bold: true
+          },
+          nodePadding: 18,
+          width: 14,
+          interactivity: true
+        },
+        link: {
+          colorMode: "gradient",
+          fillOpacity: isDark ? 0.4 : 0.25
+        }
+      }
+    };
+
+    container.innerHTML = "";
+    const chart = new window.google.visualization.Sankey(container);
+    chart.draw(dataTable, options);
+
+  } catch (err) {
+    console.error("Error al renderizar la Matriz Sankey:", err);
+    container.innerHTML = `
+      <div class="p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl text-xs text-rose-600 dark:text-rose-300">
+        Error al generar el gráfico de operacionalización.
+      </div>
+    `;
+  }
 }

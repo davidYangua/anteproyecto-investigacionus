@@ -204,3 +204,17 @@ export const FACULTIES_DATA = [
     ]
   }
 ];
+
+/**
+ * Retorna la lista de facultades para poblar el selector principal
+ */
+export function getFacultiesList() {
+  return FACULTIES_DATA.map(f => ({ id: f.id, nombre: f.nombre }));
+}
+
+/**
+ * Obtiene una facultad por su ID
+ */
+export function getFacultyById(facId) {
+  return FACULTIES_DATA.find(f => f.id === facId) || null;
+}

@@ -6,6 +6,10 @@
 import { SECTIONS_DATA } from "../data/sectionsData.js";
 import { evaluateCoherenceChain } from "./coherenceChain.js";
 
+/**
+ * Inicializa los eventos de la Pestaña 05 y realiza el primer renderizado de vistas
+ * @param {Object} state Estado global de la aplicación
+ */
 export function initLogAndReport(state) {
   const copyDeclBtn = document.getElementById("copydecl");
 
@@ -26,6 +30,10 @@ export function initLogAndReport(state) {
   renderReportView(state);
 }
 
+/**
+ * Re-renderiza todos los componentes de la Pestaña 05 (Métricas, Mapa de calor, Plan, Bitácora y Anexo 5)
+ * @param {Object} state 
+ */
 export function renderReportView(state) {
   renderReportStats(state);
   renderHeatmap(state);
@@ -63,7 +71,7 @@ export function renderHeatmap(state) {
     }
 
     const cell = document.createElement("div");
-    cell.className = `p-3 rounded-xl border flex flex-col justify-between transition shadow-sm ${statusClass} cursor-pointer`;
+    cell.className = `p-3 rounded-xl border flex flex-col justify-between transition shadow-sm ${statusClass} cursor-pointer hover:scale-105 transform duration-150`;
     cell.title = `${sec.code}: ${sec.title} (${words} palabras - ${statusLabel})`;
     cell.innerHTML = `
       <div class="flex items-center justify-between gap-1">
@@ -73,10 +81,24 @@ export function renderHeatmap(state) {
       <span class="text-[11px] font-semibold truncate mt-1.5">${sec.title}</span>
     `;
 
+    // Al hacer clic en un cuadro del mapa de calor, ir a la Estación de Redacción (Pestaña 02)
+    cell.addEventListener("click", () => {
+      const p2Tab = document.querySelector("[aria-controls='p-red']");
+      if (p2Tab) p2Tab.click();
+      const routeSelectEl = document.getElementById("routeselect");
+      if (routeSelectEl) {
+        routeSelectEl.value = sec.id;
+        routeSelectEl.dispatchEvent(new Event("change"));
+      }
+    });
+
     container.appendChild(cell);
   });
 }
 
+/**
+ * Renderiza las métricas estadísticas del proyecto
+ */
 export function renderReportStats(state) {
   const statsContainer = document.getElementById("stats");
   if (!statsContainer) return;
@@ -122,6 +144,9 @@ export function renderReportStats(state) {
   `;
 }
 
+/**
+ * Genera y renderiza el Plan de Trabajo Dinámico según faltantes
+ */
 export function renderWorkPlan(state) {
   const planContainer = document.getElementById("plan");
   if (!planContainer) return;
@@ -209,6 +234,9 @@ export function renderWorkPlan(state) {
   }
 }
 
+/**
+ * Renderiza la tabla de bitácora de interacciones con IA
+ */
 export function renderAILogTable(state) {
   const tbody = document.getElementById("logbody");
   const logCountEl = document.getElementById("logcount");
@@ -249,6 +277,9 @@ export function renderAILogTable(state) {
   });
 }
 
+/**
+ * Genera el texto formal del Anexo 5 (Declaración Jurada de Uso de IA)
+ */
 export function generateAnexo5Text(state) {
   const student = state.student || {};
   const logs = state.log || [];
@@ -279,6 +310,9 @@ Firma del Estudiante / Investigador
 DNI / Código USS: ________________________`;
 }
 
+/**
+ * Renderiza la vista previa del Anexo 5
+ */
 export function renderAnexo5Draft(state) {
   const declEl = document.getElementById("decl");
   if (declEl) {

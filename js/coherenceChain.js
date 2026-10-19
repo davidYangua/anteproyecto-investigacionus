@@ -1,7 +1,11 @@
 /**
- * NEXO Research Studio - Motor de Coherencia Metodológica (6 Eslabones)
+ * NEXO Research Studio - Motor de Coherencia Metodológica (6 Eslabones) y Poblado de Selectores
  * Archivo: js/coherenceChain.js
+ * Autor / Dirección Metodológica: Ing. Percy Castro Mejía
  */
+
+import { FACULTIES_DATA } from "../data/facultiesData.js";
+import { THEORIES_DATA } from "../data/theoriesData.js";
 
 /**
  * Normaliza y limpia cadenas para comparaciones flexibles
@@ -18,9 +22,137 @@ function normalizeText(str) {
 }
 
 /**
+ * Inicializa y vincula dinámicamente los selectores de Facultad, Escuela y Teoría
+ * @param {Object} state Estado global de la aplicación
+ * @param {Function} onStateChange Callback invocado al cambiar alguna selección
+ */
+export function setupFacultySelects(state, onStateChange) {
+  const facSelect = document.getElementById("st-fac");
+  const escSelect = document.getElementById("st-esc");
+  const teoSelect = document.getElementById("f-teo");
+
+  if (!facSelect) return;
+
+  // 1. Poblado inicial del selector de Facultades
+  facSelect.innerHTML = `<option value="">Seleccione Facultad…</option>`;
+  FACULTIES_DATA.forEach(fac => {
+    const opt = document.createElement("option");
+    opt.value = fac.id;
+    opt.textContent = fac.nombre;
+    if (state.student && (state.student.facultad === fac.id || state.student.facultad === fac.nombre)) {
+      opt.selected = true;
+    }
+    facSelect.appendChild(opt);
+  });
+
+  // 2. Función para actualizar Escuelas y Teorías en cascada
+  const updateSubSelects = (facId, selectedEsc = "", selectedTeo = "") => {
+    // Buscar la facultad por ID o por Nombre por resiliencia
+    const faculty = FACULTIES_DATA.find(f => f.id === facId || f.nombre === facId);
+
+    // Actualizar selector de Escuelas Profesionales
+    if (escSelect) {
+      escSelect.innerHTML = `<option value="">Seleccione Escuela…</option>`;
+      
+      if (faculty) {
+        // Soporta tanto faculty.schools (objetos) como faculty.escuelas (strings)
+        const schoolList = faculty.schools || faculty.escuelas || [];
+        
+        schoolList.forEach(sch => {
+          const opt = document.createElement("option");
+          const schName = typeof sch === "string" ? sch : (sch.name || sch.nombre);
+          opt.value = schName;
+          opt.textContent = schName;
+          
+          if (selectedEsc && (selectedEsc === schName || selectedEsc === sch.id)) {
+            opt.selected = true;
+          }
+          escSelect.appendChild(opt);
+        });
+      }
+    }
+
+    // Actualizar selector de Marcos Teóricos en Pestaña 01 (Sincronizado con Catálogo Base + Personalizados)
+    if (teoSelect) {
+      const currentTeoVal = teoSelect.value;
+      teoSelect.innerHTML = `<option value="">Seleccione Teoría o Modelo…</option>`;
+      
+      const targetFacId = faculty ? faculty.id : facId;
+      
+      // Combinar catálogo predefinido con teorías personalizadas creadas por el estudiante
+      const allTheories = [...THEORIES_DATA, ...(state.customTheories || [])];
+      
+      const filteredTheories = targetFacId 
+        ? allTheories.filter(t => t.facultad === targetFacId)
+        : allTheories;
+
+      filteredTheories.forEach(t => {
+        const opt = document.createElement("option");
+        opt.value = t.nombre;
+        opt.textContent = `${t.nombre} (${t.autor}, ${t.anio})`;
+        if (selectedTeo === t.nombre || currentTeoVal === t.nombre) {
+          opt.selected = true;
+        }
+        teoSelect.appendChild(opt);
+      });
+
+      // Asegurar resiliencia: Si la teoría seleccionada fue asignada desde la Pestaña 03 u otra facultad,
+      // y no aparece en el filtro actual, se inyecta dinámicamente para preservar la coherencia.
+      const targetTeo = selectedTeo || currentTeoVal;
+      if (targetTeo) {
+        const optionExists = Array.from(teoSelect.options).some(opt => opt.value === targetTeo);
+        if (!optionExists) {
+          const opt = document.createElement("option");
+          opt.value = targetTeo;
+          opt.textContent = `${targetTeo} (Asignada/Personalizada)`;
+          opt.selected = true;
+          teoSelect.appendChild(opt);
+        }
+      }
+    }
+  };
+
+  // Inicializar sub-selectores si ya hay una facultad guardada en el estado
+  const currentFac = state.student ? state.student.facultad : "";
+  const currentEsc = state.student ? state.student.escuela : "";
+  const currentTeo = state.project ? state.project.teo : "";
+  
+  updateSubSelects(currentFac, currentEsc, currentTeo);
+
+  // Evento al cambiar de Facultad
+  facSelect.onchange = (e) => {
+    const selectedFac = e.target.value;
+    if (state.student) {
+      state.student.facultad = selectedFac;
+      state.student.escuela = ""; // Limpiar escuela al cambiar facultad
+    }
+    updateSubSelects(selectedFac, "", state.project ? state.project.teo : "");
+    if (onStateChange) onStateChange();
+  };
+
+  // Evento al cambiar de Escuela
+  if (escSelect) {
+    escSelect.onchange = (e) => {
+      if (state.student) {
+        state.student.escuela = e.target.value;
+      }
+      if (onStateChange) onStateChange();
+    };
+  }
+
+  // Evento al cambiar de Teoría
+  if (teoSelect) {
+    teoSelect.onchange = (e) => {
+      if (state.project) {
+        state.project.teo = e.target.value;
+      }
+      if (onStateChange) onStateChange();
+    };
+  }
+}
+
+/**
  * Evalúa los 6 eslabones de la cadena de coherencia
- * @param {Object} data Objeto con el estado actual de las variables y campos
- * @returns {Array<Object>} Lista de objetos con el diagnóstico de cada eslabón
  */
 export function evaluateCoherenceChain(data = {}) {
   const {
@@ -51,9 +183,7 @@ export function evaluateCoherenceChain(data = {}) {
 
   const links = [];
 
-  // ==========================================
-  // ESLABÓN 1: Declaración de Núcleo (V1, V2, Población, Ámbito, Periodo)
-  // ==========================================
+  // ESLABÓN 1: Declaración de Núcleo Temático
   const link1 = {
     id: 1,
     title: "Eslabón 1: Declaración de Núcleo Temático",
@@ -77,9 +207,7 @@ export function evaluateCoherenceChain(data = {}) {
   }
   links.push(link1);
 
-  // ==========================================
-  // ESLABÓN 2: Pregunta General vs. Variables y Delimitación
-  // ==========================================
+  // ESLABÓN 2: Pregunta General
   const link2 = {
     id: 2,
     title: "Eslabón 2: Pregunta General de Investigación",
@@ -95,7 +223,6 @@ export function evaluateCoherenceChain(data = {}) {
   } else {
     const hasV1 = nV1 && nPreg.includes(nV1);
     const hasV2 = !nV2 || nPreg.includes(nV2);
-    const hasPob = nPob && nPreg.includes(nPob);
     const isInterrogative = preg.trim().startsWith("¿") || preg.trim().endsWith("?");
 
     if (hasV1 && hasV2 && isInterrogative) {
@@ -114,9 +241,7 @@ export function evaluateCoherenceChain(data = {}) {
   }
   links.push(link2);
 
-  // ==========================================
-  // ESLABÓN 3: Marco Teórico vs. Variable de Resultado (V2)
-  // ==========================================
+  // ESLABÓN 3: Marco Teórico
   const link3 = {
     id: 3,
     title: "Eslabón 3: Fundamentación Teórica Principal",
@@ -136,9 +261,7 @@ export function evaluateCoherenceChain(data = {}) {
   }
   links.push(link3);
 
-  // ==========================================
-  // ESLABÓN 4: Objetivo General vs. Pregunta General
-  // ==========================================
+  // ESLABÓN 4: Objetivo General vs Pregunta
   const link4 = {
     id: 4,
     title: "Eslabón 4: Alineación Pregunta - Objetivo General",
@@ -172,9 +295,7 @@ export function evaluateCoherenceChain(data = {}) {
   }
   links.push(link4);
 
-  // ==========================================
-  // ESLABÓN 5: Diseño Metodológico vs. Alcance y Verbos
-  // ==========================================
+  // ESLABÓN 5: Diseño Metodológico vs Alcance
   const link5 = {
     id: 5,
     title: "Eslabón 5: Alcance y Diseño Metodológico",
@@ -200,9 +321,7 @@ export function evaluateCoherenceChain(data = {}) {
   }
   links.push(link5);
 
-  // ==========================================
   // ESLABÓN 6: Hipótesis e Instrumentos
-  // ==========================================
   const link6 = {
     id: 6,
     title: "Eslabón 6: Hipótesis e Instrumentos de Medición",
@@ -231,10 +350,6 @@ export function evaluateCoherenceChain(data = {}) {
 
 /**
  * Renderiza la interfaz de tarjetas del Hilo de Coherencia en el DOM
- * @param {Array<Object>} links Lista de diagnósticos de los 6 eslabones
- * @param {HTMLElement} containerEl Contenedor DOM para las tarjetas
- * @param {HTMLElement} scoreBarEl Contenedor de la barra visual de progreso
- * @param {HTMLElement} scoreSummaryEl Contenedor del texto de resumen
  */
 export function renderCoherenceChainUI(links, containerEl, scoreBarEl, scoreSummaryEl) {
   if (!containerEl) return;
@@ -247,7 +362,6 @@ export function renderCoherenceChainUI(links, containerEl, scoreBarEl, scoreSumm
   links.forEach(link => {
     if (link.status === "ok") okCount++;
 
-    // Color badges
     let statusClass = "bg-rose-100 text-rose-800 border-rose-300 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800";
     let iconName = "alert-circle";
 
@@ -259,7 +373,6 @@ export function renderCoherenceChainUI(links, containerEl, scoreBarEl, scoreSumm
       iconName = "alert-triangle";
     }
 
-    // Crear Card DOM
     const card = document.createElement("div");
     card.className = "p-4 rounded-xl border bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 transition shadow-sm space-y-1.5";
 
@@ -276,7 +389,6 @@ export function renderCoherenceChainUI(links, containerEl, scoreBarEl, scoreSumm
 
     containerEl.appendChild(card);
 
-    // Agregar bloque a la barra de puntuación
     if (scoreBarEl) {
       const seg = document.createElement("div");
       seg.className = `h-2 flex-1 rounded-full transition-all duration-300 ${
@@ -290,7 +402,6 @@ export function renderCoherenceChainUI(links, containerEl, scoreBarEl, scoreSumm
     scoreSummaryEl.textContent = `${okCount} de 6 eslabones firmes`;
   }
 
-  // Re-inicializar íconos de Lucide
   if (window.lucide) {
     window.lucide.createIcons();
   }
