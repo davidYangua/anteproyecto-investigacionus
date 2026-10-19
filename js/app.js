@@ -1,8 +1,3 @@
-/**
- * NEXO Research Studio - Orquestador Principal de la Aplicación
- * Archivo: js/app.js
- * Autor / Dirección Metodológica: Ing. Percy Castro Mejía
- */
 
 import { updateI18nUI } from "./i18n.js";
 import { setupFacultySelects, evaluateCoherenceChain, renderCoherenceChainUI } from "./coherenceChain.js";

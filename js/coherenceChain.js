@@ -1,8 +1,3 @@
-/**
- * NEXO Research Studio - Motor de Coherencia Metodológica (6 Eslabones) y Poblado de Selectores
- * Archivo: js/coherenceChain.js
- * Autor / Dirección Metodológica: Ing. Percy Castro Mejía
- */
 
 import { FACULTIES_DATA } from "../data/facultiesData.js";
 import { THEORIES_DATA } from "../data/theoriesData.js";

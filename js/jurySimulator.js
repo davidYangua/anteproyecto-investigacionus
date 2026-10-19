@@ -1,8 +1,3 @@
-/**
- * NEXO Research Studio - Simulador de Jurado de Sustentación
- * Archivo: js/jurySimulator.js
- * Autor / Dirección Metodológica: Ing. Percy Castro Mejía
- */
 
 import { SECTIONS_DATA } from "../data/sectionsData.js";
 

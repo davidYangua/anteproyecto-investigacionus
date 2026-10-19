@@ -1,8 +1,3 @@
-/**
- * NEXO Research Studio - Generador de Informes Word (.docx) de Alta Gama y Respaldos JSON
- * Archivo: js/reportExporter.js
- * Autor / Dirección Metodológica: Ing. Percy Castro Mejía
- */
 
 import { THEORIES_DATA } from "../data/theoriesData.js";
 import { evaluateCoherenceChain } from "./coherenceChain.js";

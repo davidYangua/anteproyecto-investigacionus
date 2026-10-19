@@ -1,7 +1,3 @@
-/**
- * NEXO Research Studio - Sistema de Internacionalización (ES / EN)
- * Archivo: js/i18n.js
- */
 
 export const TRANSLATIONS = {
   es: {

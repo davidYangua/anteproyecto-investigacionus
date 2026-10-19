@@ -1,7 +1,3 @@
-/**
- * NEXO Research Studio - Capa de Datos: Facultades y Escuelas USS
- * Archivo: data/facultiesData.js
- */
 
 export const FACULTIES_DATA = [
   {

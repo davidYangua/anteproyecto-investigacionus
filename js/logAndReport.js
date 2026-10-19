@@ -1,7 +1,3 @@
-/**
- * NEXO Research Studio - Bitácora de IA, Anexo 5, Mapa de Calor y Plan de Trabajo
- * Archivo: js/logAndReport.js
- */
 
 import { SECTIONS_DATA } from "../data/sectionsData.js";
 import { evaluateCoherenceChain } from "./coherenceChain.js";

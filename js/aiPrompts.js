@@ -1,7 +1,3 @@
-/**
- * NEXO Research Studio - Generador Centralizado de Prompts para IA
- * Archivo: js/aiPrompts.js
- */
 
 import { SECTIONS_DATA } from "../data/sectionsData.js";
 import { MODELS_DATA } from "../data/modelsData.js";

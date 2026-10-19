@@ -1,8 +1,3 @@
-/**
- * NEXO Research Studio - Diagrama Sankey Universal de Operacionalización
- * Archivo: js/sankeyChart.js
- * Dirección Metodológica: Ing. Percy Castro Mejía
- */
 
 let googleChartsLoaded = false;
 

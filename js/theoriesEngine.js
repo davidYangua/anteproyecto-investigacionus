@@ -1,8 +1,3 @@
-/**
- * NEXO Research Studio - Buscador, Recomendador y Gestor de Marcos Teóricos
- * Archivo: js/theoriesEngine.js
- * Autor / Dirección Metodológica: Ing. Percy Castro Mejía
- */
 
 import { THEORIES_DATA } from "../data/theoriesData.js";
 

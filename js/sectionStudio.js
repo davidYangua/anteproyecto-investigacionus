@@ -1,8 +1,3 @@
-/**
- * NEXO Research Studio - Estación de Redacción y Ruta de 16 Semanas
- * Archivo: js/sectionStudio.js
- * Autor / Dirección Metodológica: Ing. Percy Castro Mejía
- */
 
 import { SECTIONS_DATA } from "../data/sectionsData.js";
 import { MODELS_DATA } from "../data/modelsData.js";

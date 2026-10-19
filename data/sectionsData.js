@@ -1,7 +1,3 @@
-/**
- * NEXO Research Studio - Capa de Datos: Ruta de 16 Semanas (Secciones y Criterios)
- * Archivo: data/sectionsData.js
- */
 
 export const SECTIONS_DATA = [
   {

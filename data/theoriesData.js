@@ -1,8 +1,3 @@
-/**
- * NEXO Research Studio - Capa de Datos: Catálogo Multidisciplinario de Teorías por Facultad
- * Archivo: data/theoriesData.js
- * Dirección Metodológica: Ing. Percy Castro Mejía
- */
 
 export const THEORIES_DATA = [
   // ==========================================

@@ -1,7 +1,3 @@
-/**
- * NEXO Research Studio - Capa de Datos: Modelos de Redacción
- * Archivo: data/modelsData.js
- */
 
 export const MODELS_DATA = {
   s1: {
