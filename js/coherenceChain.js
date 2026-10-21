@@ -1,4 +1,3 @@
-
 import { FACULTIES_DATA } from "../data/facultiesData.js";
 import { THEORIES_DATA } from "../data/theoriesData.js";
 
@@ -28,8 +27,10 @@ export function setupFacultySelects(state, onStateChange) {
 
   if (!facSelect) return;
 
+  const isEn = state.lang === "en";
+
   // 1. Poblado inicial del selector de Facultades
-  facSelect.innerHTML = `<option value="">Seleccione Facultad…</option>`;
+  facSelect.innerHTML = `<option value="">${isEn ? "Select Faculty…" : "Seleccione Facultad…"}</option>`;
   FACULTIES_DATA.forEach(fac => {
     const opt = document.createElement("option");
     opt.value = fac.id;
@@ -42,15 +43,13 @@ export function setupFacultySelects(state, onStateChange) {
 
   // 2. Función para actualizar Escuelas y Teorías en cascada
   const updateSubSelects = (facId, selectedEsc = "", selectedTeo = "") => {
-    // Buscar la facultad por ID o por Nombre por resiliencia
     const faculty = FACULTIES_DATA.find(f => f.id === facId || f.nombre === facId);
 
     // Actualizar selector de Escuelas Profesionales
     if (escSelect) {
-      escSelect.innerHTML = `<option value="">Seleccione Escuela…</option>`;
+      escSelect.innerHTML = `<option value="">${isEn ? "Select School…" : "Seleccione Escuela…"}</option>`;
       
       if (faculty) {
-        // Soporta tanto faculty.schools (objetos) como faculty.escuelas (strings)
         const schoolList = faculty.schools || faculty.escuelas || [];
         
         schoolList.forEach(sch => {
@@ -67,14 +66,12 @@ export function setupFacultySelects(state, onStateChange) {
       }
     }
 
-    // Actualizar selector de Marcos Teóricos en Pestaña 01 (Sincronizado con Catálogo Base + Personalizados)
+    // Actualizar selector de Marcos Teóricos en Pestaña 01
     if (teoSelect) {
       const currentTeoVal = teoSelect.value;
-      teoSelect.innerHTML = `<option value="">Seleccione Teoría o Modelo…</option>`;
+      teoSelect.innerHTML = `<option value="">${isEn ? "Select Theory or Model…" : "Seleccione Teoría o Modelo…"}</option>`;
       
       const targetFacId = faculty ? faculty.id : facId;
-      
-      // Combinar catálogo predefinido con teorías personalizadas creadas por el estudiante
       const allTheories = [...THEORIES_DATA, ...(state.customTheories || [])];
       
       const filteredTheories = targetFacId 
@@ -91,15 +88,13 @@ export function setupFacultySelects(state, onStateChange) {
         teoSelect.appendChild(opt);
       });
 
-      // Asegurar resiliencia: Si la teoría seleccionada fue asignada desde la Pestaña 03 u otra facultad,
-      // y no aparece en el filtro actual, se inyecta dinámicamente para preservar la coherencia.
       const targetTeo = selectedTeo || currentTeoVal;
       if (targetTeo) {
         const optionExists = Array.from(teoSelect.options).some(opt => opt.value === targetTeo);
         if (!optionExists) {
           const opt = document.createElement("option");
           opt.value = targetTeo;
-          opt.textContent = `${targetTeo} (Asignada/Personalizada)`;
+          opt.textContent = `${targetTeo} (${isEn ? "Assigned/Custom" : "Asignada/Personalizada"})`;
           opt.selected = true;
           teoSelect.appendChild(opt);
         }
@@ -107,25 +102,22 @@ export function setupFacultySelects(state, onStateChange) {
     }
   };
 
-  // Inicializar sub-selectores si ya hay una facultad guardada en el estado
   const currentFac = state.student ? state.student.facultad : "";
   const currentEsc = state.student ? state.student.escuela : "";
   const currentTeo = state.project ? state.project.teo : "";
   
   updateSubSelects(currentFac, currentEsc, currentTeo);
 
-  // Evento al cambiar de Facultad
   facSelect.onchange = (e) => {
     const selectedFac = e.target.value;
     if (state.student) {
       state.student.facultad = selectedFac;
-      state.student.escuela = ""; // Limpiar escuela al cambiar facultad
+      state.student.escuela = "";
     }
     updateSubSelects(selectedFac, "", state.project ? state.project.teo : "");
     if (onStateChange) onStateChange();
   };
 
-  // Evento al cambiar de Escuela
   if (escSelect) {
     escSelect.onchange = (e) => {
       if (state.student) {
@@ -135,7 +127,6 @@ export function setupFacultySelects(state, onStateChange) {
     };
   }
 
-  // Evento al cambiar de Teoría
   if (teoSelect) {
     teoSelect.onchange = (e) => {
       if (state.project) {
@@ -147,9 +138,14 @@ export function setupFacultySelects(state, onStateChange) {
 }
 
 /**
- * Evalúa los 6 eslabones de la cadena de coherencia
+ * Evalúa los 6 eslabones de la cadena de coherencia con soporte bilingüe (ES / EN)
+ * @param {Object} data Datos del proyecto
+ * @param {string} [lang] Idioma opcional ("es" | "en")
  */
-export function evaluateCoherenceChain(data = {}) {
+export function evaluateCoherenceChain(data = {}, lang = null) {
+  const currentLang = lang || data.lang || window.nexoState?.lang || "es";
+  const isEn = currentLang === "en";
+
   const {
     v1 = "",
     v2 = "",
@@ -174,14 +170,13 @@ export function evaluateCoherenceChain(data = {}) {
   const nObj = normalizeText(obj);
   const nHip = normalizeText(hip);
   const nI1 = normalizeText(i1);
-  const nI2 = normalizeText(i2);
 
   const links = [];
 
   // ESLABÓN 1: Declaración de Núcleo Temático
   const link1 = {
     id: 1,
-    title: "Eslabón 1: Declaración de Núcleo Temático",
+    title: isEn ? "Link 1: Thematic Core Declaration" : "Eslabón 1: Declaración de Núcleo Temático",
     status: "bad",
     msg: "",
     detail: ""
@@ -189,23 +184,29 @@ export function evaluateCoherenceChain(data = {}) {
 
   if (!nV1 || !nPob || !nAmb || !nPer) {
     link1.status = "bad";
-    link1.msg = "Incompleto";
-    link1.detail = "Faltan declarar campos clave del núcleo: asegúrese de completar al menos la Variable 1, Población, Ámbito y Periodo.";
+    link1.msg = isEn ? "Incomplete" : "Incompleto";
+    link1.detail = isEn
+      ? "Missing key core fields: make sure to complete at least Variable 1, Population, Scope, and Period."
+      : "Faltan declarar campos clave del núcleo: asegúrese de completar al menos la Variable 1, Población, Ámbito y Periodo.";
   } else if (!nV2) {
     link1.status = "warn";
-    link1.msg = "Estudio Univariado / Descriptivo";
-    link1.detail = "Se ha registrado solo una variable (V1). Si su estudio es correlacional o explicativo, debe declarar la Variable 2.";
+    link1.msg = isEn ? "Univariate / Descriptive Study" : "Estudio Univariado / Descriptivo";
+    link1.detail = isEn
+      ? "Only one variable (V1) registered. If your study is correlational or explanatory, Variable 2 must be declared."
+      : "Se ha registrado solo una variable (V1). Si su estudio es correlacional o explicativo, debe declarar la Variable 2.";
   } else {
     link1.status = "ok";
-    link1.msg = "Núcleo Bivariado Completo";
-    link1.detail = `Variables (${v1} ${v2 ? "y " + v2 : ""}), delimitadas en ${pob}, ${amb} (${per}).`;
+    link1.msg = isEn ? "Complete Bivariate Core" : "Núcleo Bivariado Completo";
+    link1.detail = isEn
+      ? `Variables (${v1} ${v2 ? "and " + v2 : ""}), bounded in ${pob}, ${amb} (${per}).`
+      : `Variables (${v1} ${v2 ? "y " + v2 : ""}), delimitadas en ${pob}, ${amb} (${per}).`;
   }
   links.push(link1);
 
-  // ESLABÓN 2: Pregunta General
+  // ESLABÓN 2: Pregunta General de Investigación
   const link2 = {
     id: 2,
-    title: "Eslabón 2: Pregunta General de Investigación",
+    title: isEn ? "Link 2: General Research Question" : "Eslabón 2: Pregunta General de Investigación",
     status: "bad",
     msg: "",
     detail: ""
@@ -213,25 +214,33 @@ export function evaluateCoherenceChain(data = {}) {
 
   if (!nPreg) {
     link2.status = "bad";
-    link2.msg = "Sin Pregunta General";
-    link2.detail = "Ingrese la pregunta general de investigación (sección 1.3).";
+    link2.msg = isEn ? "No General Question" : "Sin Pregunta General";
+    link2.detail = isEn
+      ? "Enter the general research question (section 1.3)."
+      : "Ingrese la pregunta general de investigación (sección 1.3).";
   } else {
     const hasV1 = nV1 && nPreg.includes(nV1);
     const hasV2 = !nV2 || nPreg.includes(nV2);
-    const isInterrogative = preg.trim().startsWith("¿") || preg.trim().endsWith("?");
+    const isInterrogative = preg.trim().startsWith("¿") || preg.trim().startsWith("?") || preg.trim().endsWith("?");
 
     if (hasV1 && hasV2 && isInterrogative) {
       link2.status = "ok";
-      link2.msg = "Pregunta Alineada";
-      link2.detail = "La pregunta formula adecuadamente las variables y estructura interrogativa.";
+      link2.msg = isEn ? "Aligned Question" : "Pregunta Alineada";
+      link2.detail = isEn
+        ? "The question properly states the variables and interrogative structure."
+        : "La pregunta formula adecuadamente las variables y estructura interrogativa.";
     } else if (!isInterrogative) {
       link2.status = "warn";
-      link2.msg = "Falta Signo Interrogativo";
-      link2.detail = "La pregunta general debe iniciar con «¿» y cerrar con «?».";
+      link2.msg = isEn ? "Missing Question Mark" : "Falta Signo Interrogativo";
+      link2.detail = isEn
+        ? "The general question must include proper question marks ('?' or '¿')."
+        : "La pregunta general debe iniciar con «¿» y cerrar con «?».";
     } else {
       link2.status = "warn";
-      link2.msg = "Discrepancia de Términos";
-      link2.detail = "Asegúrese de que la pregunta contenga exactamente los nombres de las variables declaradas.";
+      link2.msg = isEn ? "Term Discrepancy" : "Discrepancia de Términos";
+      link2.detail = isEn
+        ? "Ensure the question contains the exact names of the declared variables."
+        : "Asegúrese de que la pregunta contenga exactamente los nombres de las variables declaradas.";
     }
   }
   links.push(link2);
@@ -239,7 +248,7 @@ export function evaluateCoherenceChain(data = {}) {
   // ESLABÓN 3: Marco Teórico
   const link3 = {
     id: 3,
-    title: "Eslabón 3: Fundamentación Teórica Principal",
+    title: isEn ? "Link 3: Main Theoretical Foundation" : "Eslabón 3: Fundamentación Teórica Principal",
     status: "bad",
     msg: "",
     detail: ""
@@ -247,19 +256,23 @@ export function evaluateCoherenceChain(data = {}) {
 
   if (!teo) {
     link3.status = "bad";
-    link3.msg = "Sin Marco Teórico Seleccionado";
-    link3.detail = "Seleccione una teoría o modelo conceptual principal que respalde la investigación (sección 1.4).";
+    link3.msg = isEn ? "No Theoretical Framework Selected" : "Sin Marco Teórico Seleccionado";
+    link3.detail = isEn
+      ? "Select a main theory or conceptual model supporting the research (section 1.4)."
+      : "Seleccione una teoría o modelo conceptual principal que respalde la investigación (sección 1.4).";
   } else {
     link3.status = "ok";
-    link3.msg = "Sostén Teórico Asignado";
-    link3.detail = `Teoría/Modelo asignado: «${teo}». Recuerde redactar el párrafo de traducción constructo-variable en la sección 1.4.`;
+    link3.msg = isEn ? "Assigned Theoretical Support" : "Sostén Teórico Asignado";
+    link3.detail = isEn
+      ? `Assigned Theory/Model: «${teo}». Remember to write the construct-variable translation paragraph in section 1.4.`
+      : `Teoría/Modelo asignado: «${teo}». Recuerde redactar el párrafo de traducción constructo-variable en la sección 1.4.`;
   }
   links.push(link3);
 
   // ESLABÓN 4: Objetivo General vs Pregunta
   const link4 = {
     id: 4,
-    title: "Eslabón 4: Alineación Pregunta - Objetivo General",
+    title: isEn ? "Link 4: Question - General Objective Alignment" : "Eslabón 4: Alineación Pregunta - Objetivo General",
     status: "bad",
     msg: "",
     detail: ""
@@ -267,25 +280,33 @@ export function evaluateCoherenceChain(data = {}) {
 
   if (!nObj) {
     link4.status = "bad";
-    link4.msg = "Sin Objetivo General";
-    link4.detail = "Declare el objetivo general (sección 1.5).";
+    link4.msg = isEn ? "No General Objective" : "Sin Objetivo General";
+    link4.detail = isEn
+      ? "Declare the general objective (section 1.5)."
+      : "Declare el objetivo general (sección 1.5).";
   } else {
-    const verbs = ["determinar", "evaluar", "analizar", "identificar", "establecer", "describir", "comparar", "demostrar"];
+    const verbs = ["determinar", "evaluar", "analizar", "identificar", "establecer", "describir", "comparar", "demostrar", "determine", "evaluate", "analyze", "identify", "establish", "describe", "compare", "demonstrate"];
     const startsWithVerb = verbs.some(v => nObj.startsWith(v));
     const hasV1InObj = nV1 && nObj.includes(nV1);
 
     if (startsWithVerb && hasV1InObj) {
       link4.status = "ok";
-      link4.msg = "Objetivo Coherente";
-      link4.detail = "El objetivo general inicia con un verbo en infinitivo adecuado y mantiene las variables de estudio.";
+      link4.msg = isEn ? "Coherent Objective" : "Objetivo Coherente";
+      link4.detail = isEn
+        ? "The general objective begins with an appropriate infinitive verb and maintains the study variables."
+        : "El objetivo general inicia con un verbo en infinitivo adecuado y mantiene las variables de estudio.";
     } else if (!startsWithVerb) {
       link4.status = "warn";
-      link4.msg = "Verbo Infinitivo Ausente";
-      link4.detail = "El objetivo general debe iniciar con un verbo en infinitivo (ej. Determinar, Identificar, Evaluar).";
+      link4.msg = isEn ? "Missing Infinitive Verb" : "Verbo Infinitivo Ausente";
+      link4.detail = isEn
+        ? "The general objective must start with an infinitive verb (e.g., Determine, Identify, Evaluate)."
+        : "El objetivo general debe iniciar con un verbo en infinitivo (ej. Determinar, Identificar, Evaluar).";
     } else {
       link4.status = "warn";
-      link4.msg = "Posible Desalineación";
-      link4.detail = "Verifique que las variables en el objetivo general coincidan literalmente con la pregunta de investigación.";
+      link4.msg = isEn ? "Possible Misalignment" : "Posible Desalineación";
+      link4.detail = isEn
+        ? "Verify that the variables in the general objective literally match the research question."
+        : "Verifique que las variables en el objetivo general coincidan literalmente con la pregunta de investigación.";
     }
   }
   links.push(link4);
@@ -293,7 +314,7 @@ export function evaluateCoherenceChain(data = {}) {
   // ESLABÓN 5: Diseño Metodológico vs Alcance
   const link5 = {
     id: 5,
-    title: "Eslabón 5: Alcance y Diseño Metodológico",
+    title: isEn ? "Link 5: Methodological Scope and Design" : "Eslabón 5: Alcance y Diseño Metodológico",
     status: "bad",
     msg: "",
     detail: ""
@@ -301,17 +322,23 @@ export function evaluateCoherenceChain(data = {}) {
 
   if (!dis) {
     link5.status = "bad";
-    link5.msg = "Sin Diseño Asignado";
-    link5.detail = "Seleccione el alcance y diseño metodológico (sección 2.1).";
+    link5.msg = isEn ? "No Design Assigned" : "Sin Diseño Asignado";
+    link5.detail = isEn
+      ? "Select the methodological scope and design (section 2.1)."
+      : "Seleccione el alcance y diseño metodológico (sección 2.1).";
   } else {
-    if (dis === "corr" && nObj && !nObj.includes("relacion") && !nObj.includes("asociac") && !nObj.includes("determinar")) {
+    if (dis === "corr" && nObj && !nObj.includes("relacion") && !nObj.includes("asociac") && !nObj.includes("determinar") && !nObj.includes("relationship") && !nObj.includes("association")) {
       link5.status = "warn";
-      link5.msg = "Incoherencia Verbo - Alcance";
-      link5.detail = "Un alcance correlacional exige verbos o frases de asociación como «Determinar la relación entre…» o «Determinar la asociación…».";
+      link5.msg = isEn ? "Verb - Scope Incoherence" : "Incoherencia Verbo - Alcance";
+      link5.detail = isEn
+        ? "A correlational scope requires verbs or phrases of association like 'Determine the relationship between...' or 'Determine association...'."
+        : "Un alcance correlacional exige verbos o frases de asociación como «Determinar la relación entre…» o «Determinar la asociación…».";
     } else {
       link5.status = "ok";
-      link5.msg = "Metodología Consistente";
-      link5.detail = `Alcance/Diseño seleccionado: [${dis.toUpperCase()}]. Coincide con la naturaleza del estudio.`;
+      link5.msg = isEn ? "Consistent Methodology" : "Metodología Consistente";
+      link5.detail = isEn
+        ? `Selected Scope/Design: [${dis.toUpperCase()}]. Matches the nature of the study.`
+        : `Alcance/Diseño seleccionado: [${dis.toUpperCase()}]. Coincide con la naturaleza del estudio.`;
     }
   }
   links.push(link5);
@@ -319,7 +346,7 @@ export function evaluateCoherenceChain(data = {}) {
   // ESLABÓN 6: Hipótesis e Instrumentos
   const link6 = {
     id: 6,
-    title: "Eslabón 6: Hipótesis e Instrumentos de Medición",
+    title: isEn ? "Link 6: Hypothesis and Measurement Instruments" : "Eslabón 6: Hipótesis e Instrumentos de Medición",
     status: "bad",
     msg: "",
     detail: ""
@@ -327,16 +354,22 @@ export function evaluateCoherenceChain(data = {}) {
 
   if (!nHip && dis !== "desc") {
     link6.status = "bad";
-    link6.msg = "Falta Hipótesis Alterna";
-    link6.detail = "Los estudios correlacionales o explicativos requieren la declaración explícita de la hipótesis alterna (Hi).";
+    link6.msg = isEn ? "Missing Alternative Hypothesis" : "Falta Hipótesis Alterna";
+    link6.detail = isEn
+      ? "Correlational or explanatory studies require explicit alternative hypothesis (Hi) statement."
+      : "Los estudios correlacionales o explicativos requieren la declaración explícita de la hipótesis alterna (Hi).";
   } else if (!nI1) {
     link6.status = "warn";
-    link6.msg = "Falta Instrumento de Variable 1";
-    link6.detail = "Declare el cuestionario, escala o lista de cotejo para medir la Variable 1.";
+    link6.msg = isEn ? "Missing Variable 1 Instrument" : "Falta Instrumento de Variable 1";
+    link6.detail = isEn
+      ? "Declare the questionnaire, scale, or checklist to measure Variable 1."
+      : "Declare el cuestionario, escala o lista de cotejo para medir la Variable 1.";
   } else {
     link6.status = "ok";
-    link6.msg = "Operacionalización e Hipótesis Validadas";
-    link6.detail = `Instrumentos asignados: ${i1} ${i2 ? "y " + i2 : ""}. ${nHip ? "Hipótesis formulada." : "Diseño descriptivo exento de hipótesis."}`;
+    link6.msg = isEn ? "Operationalization & Hypothesis Validated" : "Operacionalización e Hipótesis Validadas";
+    link6.detail = isEn
+      ? `Assigned instruments: ${i1} ${i2 ? "and " + i2 : ""}. ${nHip ? "Hypothesis formulated." : "Descriptive design exempt from hypothesis."}`
+      : `Instrumentos asignados: ${i1} ${i2 ? "y " + i2 : ""}. ${nHip ? "Hipótesis formulada." : "Diseño descriptivo exento de hipótesis."}`;
   }
   links.push(link6);
 
@@ -348,6 +381,8 @@ export function evaluateCoherenceChain(data = {}) {
  */
 export function renderCoherenceChainUI(links, containerEl, scoreBarEl, scoreSummaryEl) {
   if (!containerEl) return;
+
+  const isEn = window.nexoState?.lang === "en";
 
   containerEl.innerHTML = "";
   if (scoreBarEl) scoreBarEl.innerHTML = "";
@@ -394,7 +429,7 @@ export function renderCoherenceChainUI(links, containerEl, scoreBarEl, scoreSumm
   });
 
   if (scoreSummaryEl) {
-    scoreSummaryEl.textContent = `${okCount} de 6 eslabones firmes`;
+    scoreSummaryEl.textContent = isEn ? `${okCount} of 6 solid links` : `${okCount} de 6 eslabones firmes`;
   }
 
   if (window.lucide) {

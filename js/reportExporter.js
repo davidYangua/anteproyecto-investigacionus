@@ -1,12 +1,11 @@
-
 import { THEORIES_DATA } from "../data/theoriesData.js";
 import { evaluateCoherenceChain } from "./coherenceChain.js";
 
 /**
  * Normaliza y extrae la nomenclatura Nombre_Apellido para el archivo
  */
-function getCleanStudentFilename(fullName) {
-  if (!fullName || !fullName.trim()) return "Estudiante_USS";
+function getCleanStudentFilename(fullName, isEn = false) {
+  if (!fullName || !fullName.trim()) return isEn ? "USS_Student" : "Estudiante_USS";
   
   const clean = fullName.trim().replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
   const parts = clean.split(/\s+/);
@@ -19,8 +18,10 @@ function getCleanStudentFilename(fullName) {
  * Genera y descarga el informe oficial en formato Word (.docx)
  */
 export async function exportToWord(state) {
+  const isEn = state?.lang === "en";
+
   if (!window.docx) {
-    throw new Error("La librería docx.js no está cargada en la aplicación.");
+    throw new Error(isEn ? "The docx.js library is not loaded." : "La librería docx.js no está cargada en la aplicación.");
   }
 
   const {
@@ -47,8 +48,8 @@ export async function exportToWord(state) {
   const allTheories = [...THEORIES_DATA, ...customTheories];
   const assignedTheory = allTheories.find(t => t.nombre === project.teo) || null;
 
-  // 2. Evaluar Coherencia
-  const coherenceLinks = evaluateCoherenceChain(project);
+  // 2. Evaluar Coherencia en el idioma activo
+  const coherenceLinks = evaluateCoherenceChain(project, state.lang);
   const okCount = coherenceLinks.filter(l => l.status === "ok").length;
 
   // 3. Cálculo de Palabras Totales y Progreso
@@ -97,7 +98,24 @@ export async function exportToWord(state) {
     });
   };
 
-  const weekTitles = {
+  const weekTitles = isEn ? {
+    w1: "Week 1: Problematic Reality and Contextualization",
+    w2: "Week 2: Formulation of Questions (General and Specific)",
+    w3: "Week 3: Research Objectives and Hypotheses",
+    w4: "Week 4: Justification and Importance of the Study",
+    w5: "Week 5: International and National Background/Antecedents",
+    w6: "Week 6: Theoretical Foundations and Definition of Constructs",
+    w7: "Week 7: Conceptual and Operational Definition of Variables",
+    w8: "Week 8: Approach, Scope, and Methodological Design",
+    w9: "Week 9: Population, Sample, and Sampling",
+    w10: "Week 10: Inclusion and Exclusion Criteria",
+    w11: "Week 11: Selection and Adaptation of Instruments",
+    w12: "Week 12: Validity and Reliability of Instruments",
+    w13: "Week 13: Data Collection Procedure",
+    w14: "Week 14: Statistical Analysis Plan",
+    w15: "Week 15: Ethical Aspects and Scientific Rigor",
+    w16: "Week 16: Anteproject Consolidated Draft and Annexes"
+  } : {
     w1: "Semana 1: Realidad Problemática y Contextualización",
     w2: "Semana 2: Formulación de Preguntas (General y Específicas)",
     w3: "Semana 3: Objetivos e Hipótesis de Investigación",
@@ -126,12 +144,22 @@ export async function exportToWord(state) {
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      children: [new TextRun({ text: "VICERRECTORADO DE INVESTIGACIÓN · PLATAFORMA NEXO RESEARCH STUDIO", size: 16, color: "64748B", font: "Arial" })],
+      children: [new TextRun({ 
+        text: isEn 
+          ? "VICE-RECTORATE FOR RESEARCH · NEXO RESEARCH STUDIO PLATFORM" 
+          : "VICERRECTORADO DE INVESTIGACIÓN · PLATAFORMA NEXO RESEARCH STUDIO", 
+        size: 16, color: "64748B", font: "Arial" 
+      })],
       space: { after: 100 }
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      children: [new TextRun({ text: "INFORME CONSOLIDADO DE AVANCE Y AUDITORÍA DE ANTEPROYECTO", bold: true, size: 20, color: "C5A059", font: "Arial" })],
+      children: [new TextRun({ 
+        text: isEn 
+          ? "CONSOLIDATED PROGRESS AND ANTEPROJECT AUDIT REPORT" 
+          : "INFORME CONSOLIDADO DE AVANCE Y AUDITORÍA DE ANTEPROYECTO", 
+        bold: true, size: 20, color: "C5A059", font: "Arial" 
+      })],
       space: { after: 300 }
     })
   );
@@ -140,18 +168,21 @@ export async function exportToWord(state) {
   docChildren.push(
     new Paragraph({
       heading: HeadingLevel.HEADING_2,
-      children: [new TextRun({ text: "1. Datos del Investigador y Afiliación Académica", bold: true, size: 22, color: "0A2540", font: "Arial" })],
+      children: [new TextRun({ 
+        text: isEn ? "1. Researcher Information and Academic Affiliation" : "1. Datos del Investigador y Afiliación Académica", 
+        bold: true, size: 22, color: "0A2540", font: "Arial" 
+      })],
       space: { after: 150 }
     }),
     new Table({
       width: { size: 100, type: WidthType.PERCENTAGE },
       borders: mainBorders,
       rows: [
-        new TableRow({ children: [createStyledCell("Estudiante / Investigador", true, 35), createStyledCell(student.nombre, false, 65)] }),
-        new TableRow({ children: [createStyledCell("Facultad USS", true, 35), createStyledCell(student.facultad, false, 65, "F8FAFC")] }),
-        new TableRow({ children: [createStyledCell("Escuela Profesional", true, 35), createStyledCell(student.escuela, false, 65)] }),
-        new TableRow({ children: [createStyledCell("Sección / Grupo de Clase", true, 35), createStyledCell(student.seccion, false, 65, "F8FAFC")] }),
-        new TableRow({ children: [createStyledCell("Título del Anteproyecto", true, 35), createStyledCell(student.titulo, false, 65)] })
+        new TableRow({ children: [createStyledCell(isEn ? "Student / Researcher" : "Estudiante / Investigador", true, 35), createStyledCell(student.nombre, false, 65)] }),
+        new TableRow({ children: [createStyledCell(isEn ? "USS Faculty" : "Facultad USS", true, 35), createStyledCell(student.facultad, false, 65, "F8FAFC")] }),
+        new TableRow({ children: [createStyledCell(isEn ? "Professional School" : "Escuela Profesional", true, 35), createStyledCell(student.escuela, false, 65)] }),
+        new TableRow({ children: [createStyledCell(isEn ? "Class Section / Group" : "Sección / Grupo de Clase", true, 35), createStyledCell(student.seccion, false, 65, "F8FAFC")] }),
+        new TableRow({ children: [createStyledCell(isEn ? "Anteproject Title" : "Título del Anteproyecto", true, 35), createStyledCell(student.titulo, false, 65)] })
       ]
     }),
     new Paragraph({ text: "", space: { after: 250 } })
@@ -161,7 +192,10 @@ export async function exportToWord(state) {
   docChildren.push(
     new Paragraph({
       heading: HeadingLevel.HEADING_2,
-      children: [new TextRun({ text: "2. Resumen Ejecutivo de Métricas y Progreso de Redacción", bold: true, size: 22, color: "0A2540", font: "Arial" })],
+      children: [new TextRun({ 
+        text: isEn ? "2. Executive Summary Metrics and Drafting Progress" : "2. Resumen Ejecutivo de Métricas y Progreso de Redacción", 
+        bold: true, size: 22, color: "0A2540", font: "Arial" 
+      })],
       space: { after: 150 }
     }),
     new Table({
@@ -170,17 +204,17 @@ export async function exportToWord(state) {
       rows: [
         new TableRow({
           children: [
-            createStyledCell("Cadena de Coherencia", true, 25),
-            createStyledCell("Total Palabras Redactadas", true, 25),
-            createStyledCell("Secciones Redactadas", true, 25),
-            createStyledCell("Avance Estimado", true, 25)
+            createStyledCell(isEn ? "Coherence Chain" : "Cadena de Coherencia", true, 25),
+            createStyledCell(isEn ? "Total Drafted Words" : "Total Palabras Redactadas", true, 25),
+            createStyledCell(isEn ? "Drafted Sections" : "Secciones Redactadas", true, 25),
+            createStyledCell(isEn ? "Estimated Progress" : "Avance Estimado", true, 25)
           ]
         }),
         new TableRow({
           children: [
-            createStyledCell(`${okCount} de 6 Eslabones OK`, false, 25, "F8FAFC", AlignmentType.CENTER),
-            createStyledCell(`${totalWords} palabras`, false, 25, "FFFFFF", AlignmentType.CENTER),
-            createStyledCell(`${draftedSections} de 16 semanas`, false, 25, "F8FAFC", AlignmentType.CENTER),
+            createStyledCell(isEn ? `${okCount} of 6 Links OK` : `${okCount} de 6 Eslabones OK`, false, 25, "F8FAFC", AlignmentType.CENTER),
+            createStyledCell(isEn ? `${totalWords} words` : `${totalWords} palabras`, false, 25, "FFFFFF", AlignmentType.CENTER),
+            createStyledCell(isEn ? `${draftedSections} of 16 weeks` : `${draftedSections} de 16 semanas`, false, 25, "F8FAFC", AlignmentType.CENTER),
             createStyledCell(`${Math.round((draftedSections / 16) * 100)}%`, false, 25, "FFFFFF", AlignmentType.CENTER)
           ]
         })
@@ -193,23 +227,26 @@ export async function exportToWord(state) {
   docChildren.push(
     new Paragraph({
       heading: HeadingLevel.HEADING_2,
-      children: [new TextRun({ text: "3. Matriz de Elementos Núcleo (Hilo de Coherencia Metodológica)", bold: true, size: 22, color: "0A2540", font: "Arial" })],
+      children: [new TextRun({ 
+        text: isEn ? "3. Core Elements Matrix (Methodological Coherence Thread)" : "3. Matriz de Elementos Núcleo (Hilo de Coherencia Metodológica)", 
+        bold: true, size: 22, color: "0A2540", font: "Arial" 
+      })],
       space: { after: 150 }
     }),
     new Table({
       width: { size: 100, type: WidthType.PERCENTAGE },
       borders: mainBorders,
       rows: [
-        new TableRow({ children: [createStyledCell("Variable 1 (Asociada / VI)", true, 35), createStyledCell(project.v1, false, 65)] }),
-        new TableRow({ children: [createStyledCell("Variable 2 (Resultado / VD)", true, 35), createStyledCell(project.v2, false, 65, "F8FAFC")] }),
-        new TableRow({ children: [createStyledCell("Población y Ámbito", true, 35), createStyledCell(`${project.pob || "—"} en ${project.amb || "—"} (${project.per || "—"})`, false, 65)] }),
-        new TableRow({ children: [createStyledCell("Enfoque Metodológico", true, 35), createStyledCell(project.enf ? project.enf.toUpperCase() : "—", false, 65, "F8FAFC")] }),
-        new TableRow({ children: [createStyledCell("Alcance y Diseño (2.1)", true, 35), createStyledCell(project.dis ? project.dis.toUpperCase() : "—", false, 65)] }),
-        new TableRow({ children: [createStyledCell("Pregunta General (1.3)", true, 35), createStyledCell(project.preg, false, 65, "F8FAFC")] }),
-        new TableRow({ children: [createStyledCell("Teoría Principal (1.4)", true, 35), createStyledCell(project.teo, false, 65)] }),
-        new TableRow({ children: [createStyledCell("Objetivo General (1.5)", true, 35), createStyledCell(project.obj, false, 65, "F8FAFC")] }),
-        new TableRow({ children: [createStyledCell("Hipótesis Alterna, Hi (1.6)", true, 35), createStyledCell(project.hip, false, 65)] }),
-        new TableRow({ children: [createStyledCell("Instrumentos de Medición", true, 35), createStyledCell(`V1: ${project.i1 || "—"} | V2: ${project.i2 || "—"}`, false, 65, "F8FAFC")] })
+        new TableRow({ children: [createStyledCell(isEn ? "Variable 1 (Associated / IV)" : "Variable 1 (Asociada / VI)", true, 35), createStyledCell(project.v1, false, 65)] }),
+        new TableRow({ children: [createStyledCell(isEn ? "Variable 2 (Outcome / DV)" : "Variable 2 (Resultado / VD)", true, 35), createStyledCell(project.v2, false, 65, "F8FAFC")] }),
+        new TableRow({ children: [createStyledCell(isEn ? "Population and Scope" : "Población y Ámbito", true, 35), createStyledCell(`${project.pob || "—"} ${isEn ? "in" : "en"} ${project.amb || "—"} (${project.per || "—"})`, false, 65)] }),
+        new TableRow({ children: [createStyledCell(isEn ? "Methodological Approach" : "Enfoque Metodológico", true, 35), createStyledCell(project.enf ? project.enf.toUpperCase() : "—", false, 65, "F8FAFC")] }),
+        new TableRow({ children: [createStyledCell(isEn ? "Scope and Design (2.1)" : "Alcance y Diseño (2.1)", true, 35), createStyledCell(project.dis ? project.dis.toUpperCase() : "—", false, 65)] }),
+        new TableRow({ children: [createStyledCell(isEn ? "General Question (1.3)" : "Pregunta General (1.3)", true, 35), createStyledCell(project.preg, false, 65, "F8FAFC")] }),
+        new TableRow({ children: [createStyledCell(isEn ? "Main Theory (1.4)" : "Teoría Principal (1.4)", true, 35), createStyledCell(project.teo, false, 65)] }),
+        new TableRow({ children: [createStyledCell(isEn ? "General Objective (1.5)" : "Objetivo General (1.5)", true, 35), createStyledCell(project.obj, false, 65, "F8FAFC")] }),
+        new TableRow({ children: [createStyledCell(isEn ? "Alternative Hypothesis, Hi (1.6)" : "Hipótesis Alterna, Hi (1.6)", true, 35), createStyledCell(project.hip, false, 65)] }),
+        new TableRow({ children: [createStyledCell(isEn ? "Measurement Instruments" : "Instrumentos de Medición", true, 35), createStyledCell(`V1: ${project.i1 || "—"} | V2: ${project.i2 || "—"}`, false, 65, "F8FAFC")] })
       ]
     }),
     new Paragraph({ text: "", space: { after: 250 } })
@@ -219,7 +256,10 @@ export async function exportToWord(state) {
   docChildren.push(
     new Paragraph({
       heading: HeadingLevel.HEADING_2,
-      children: [new TextRun({ text: "4. Matriz de Operacionalización y Conservación de Flujo (Trazabilidad)", bold: true, size: 22, color: "0A2540", font: "Arial" })],
+      children: [new TextRun({ 
+        text: isEn ? "4. Operationalization and Flow Traceability Matrix" : "4. Matriz de Operacionalización y Conservación de Flujo (Trazabilidad)", 
+        bold: true, size: 22, color: "0A2540", font: "Arial" 
+      })],
       space: { after: 150 }
     }),
     new Table({
@@ -228,23 +268,23 @@ export async function exportToWord(state) {
       rows: [
         new TableRow({
           children: [
-            createStyledCell("Nivel Macro (Variable)", true, 30),
-            createStyledCell("Nivel Meso (Dimensiones)", true, 40),
-            createStyledCell("Nivel Micro (Ítems / Instrumento)", true, 30)
+            createStyledCell(isEn ? "Macro Level (Variable)" : "Nivel Macro (Variable)", true, 30),
+            createStyledCell(isEn ? "Meso Level (Dimensions)" : "Nivel Meso (Dimensiones)", true, 40),
+            createStyledCell(isEn ? "Micro Level (Items / Instrument)" : "Nivel Micro (Ítems / Instrumento)", true, 30)
           ]
         }),
         new TableRow({
           children: [
-            createStyledCell(project.v1 || "Variable 1", false, 30, "F8FAFC"),
-            createStyledCell("Dimensiones del Instrumento V1", false, 40, "F8FAFC"),
-            createStyledCell(project.i1 || "Ítems V1", false, 30, "F8FAFC")
+            createStyledCell(project.v1 || (isEn ? "Variable 1" : "Variable 1"), false, 30, "F8FAFC"),
+            createStyledCell(isEn ? "Dimensions of V1 Instrument" : "Dimensiones del Instrumento V1", false, 40, "F8FAFC"),
+            createStyledCell(project.i1 || "V1 Items", false, 30, "F8FAFC")
           ]
         }),
         new TableRow({
           children: [
-            createStyledCell(project.v2 || "Variable 2", false, 30),
-            createStyledCell("Dimensiones del Instrumento V2", false, 40),
-            createStyledCell(project.i2 || "Ítems V2", false, 30)
+            createStyledCell(project.v2 || (isEn ? "Variable 2" : "Variable 2"), false, 30),
+            createStyledCell(isEn ? "Dimensions of V2 Instrument" : "Dimensiones del Instrumento V2", false, 40),
+            createStyledCell(project.i2 || "V2 Items", false, 30)
           ]
         })
       ]
@@ -256,7 +296,10 @@ export async function exportToWord(state) {
   docChildren.push(
     new Paragraph({
       heading: HeadingLevel.HEADING_2,
-      children: [new TextRun({ text: "5. Fundamentación y Ficha Técnica del Marco Teórico Seleccionado", bold: true, size: 22, color: "0A2540", font: "Arial" })],
+      children: [new TextRun({ 
+        text: isEn ? "5. Theoretical Framework Rationale and Technical Sheet" : "5. Fundamentación y Ficha Técnica del Marco Teórico Seleccionado", 
+        bold: true, size: 22, color: "0A2540", font: "Arial" 
+      })],
       space: { after: 150 }
     })
   );
@@ -267,20 +310,23 @@ export async function exportToWord(state) {
         width: { size: 100, type: WidthType.PERCENTAGE },
         borders: mainBorders,
         rows: [
-          new TableRow({ children: [createStyledCell("Nombre del Marco Teórico", true, 35), createStyledCell(assignedTheory.nombre, false, 65)] }),
-          new TableRow({ children: [createStyledCell("Autor y Año", true, 35), createStyledCell(`${assignedTheory.autor || '—'} (${assignedTheory.anio || '—'})`, false, 65, "F8FAFC")] }),
-          new TableRow({ children: [createStyledCell("Postulado Central", true, 35), createStyledCell(assignedTheory.postulado || assignedTheory.resumen, false, 65)] }),
-          new TableRow({ children: [createStyledCell("Constructos / Dimensiones", true, 35), createStyledCell(Array.isArray(assignedTheory.constructos) ? assignedTheory.constructos.join(", ") : "—", false, 65, "F8FAFC")] }),
-          new TableRow({ children: [createStyledCell("Predicción Teórica", true, 35), createStyledCell(assignedTheory.predice || "—", false, 65)] }),
-          new TableRow({ children: [createStyledCell("Cita Sugerida (APA 7)", true, 35), createStyledCell(assignedTheory.ejemploCita || "—", false, 65, "F8FAFC")] }),
-          new TableRow({ children: [createStyledCell("Referencia Completa", true, 35), createStyledCell(assignedTheory.ref || "—", false, 65)] })
+          new TableRow({ children: [createStyledCell(isEn ? "Theoretical Framework Name" : "Nombre del Marco Teórico", true, 35), createStyledCell(assignedTheory.nombre, false, 65)] }),
+          new TableRow({ children: [createStyledCell(isEn ? "Author and Year" : "Autor y Año", true, 35), createStyledCell(`${assignedTheory.autor || '—'} (${assignedTheory.anio || '—'})`, false, 65, "F8FAFC")] }),
+          new TableRow({ children: [createStyledCell(isEn ? "Core Postulate" : "Postulado Central", true, 35), createStyledCell(assignedTheory.postulado || assignedTheory.resumen, false, 65)] }),
+          new TableRow({ children: [createStyledCell(isEn ? "Constructs / Dimensions" : "Constructos / Dimensiones", true, 35), createStyledCell(Array.isArray(assignedTheory.constructos) ? assignedTheory.constructos.join(", ") : "—", false, 65, "F8FAFC")] }),
+          new TableRow({ children: [createStyledCell(isEn ? "Theoretical Prediction" : "Predicción Teórica", true, 35), createStyledCell(assignedTheory.predice || "—", false, 65)] }),
+          new TableRow({ children: [createStyledCell(isEn ? "Suggested Citation (APA 7)" : "Cita Sugerida (APA 7)", true, 35), createStyledCell(assignedTheory.ejemploCita || "—", false, 65, "F8FAFC")] }),
+          new TableRow({ children: [createStyledCell(isEn ? "Full Reference" : "Referencia Completa", true, 35), createStyledCell(assignedTheory.ref || "—", false, 65)] })
         ]
       })
     );
   } else {
     docChildren.push(
       new Paragraph({
-        children: [new TextRun({ text: project.teo ? `Teoría declarada: ${project.teo}` : "No se ha seleccionado una teoría en el proyecto.", italic: true, size: 18, font: "Arial" })]
+        children: [new TextRun({ 
+          text: project.teo ? `${isEn ? "Declared theory" : "Teoría declarada"}: ${project.teo}` : (isEn ? "No theoretical framework selected in project." : "No se ha seleccionado una teoría en el proyecto."), 
+          italic: true, size: 18, font: "Arial" 
+        })]
       })
     );
   }
@@ -291,7 +337,10 @@ export async function exportToWord(state) {
   docChildren.push(
     new Paragraph({
       heading: HeadingLevel.HEADING_2,
-      children: [new TextRun({ text: "6. Auditoría Autómata de la Cadena de Coherencia (6 Eslabones)", bold: true, size: 22, color: "0A2540", font: "Arial" })],
+      children: [new TextRun({ 
+        text: isEn ? "6. Automated Coherence Chain Audit (6 Links)" : "6. Auditoría Autómata de la Cadena de Coherencia (6 Eslabones)", 
+        bold: true, size: 22, color: "0A2540", font: "Arial" 
+      })],
       space: { after: 150 }
     })
   );
@@ -319,7 +368,10 @@ export async function exportToWord(state) {
   docChildren.push(
     new Paragraph({
       heading: HeadingLevel.HEADING_2,
-      children: [new TextRun({ text: "7. Borradores Redactados por Secciones (Ruta de 16 Semanas)", bold: true, size: 22, color: "0A2540", font: "Arial" })],
+      children: [new TextRun({ 
+        text: isEn ? "7. Section Drafts (16-Week Route)" : "7. Borradores Redactados por Secciones (Ruta de 16 Semanas)", 
+        bold: true, size: 22, color: "0A2540", font: "Arial" 
+      })],
       space: { after: 150 }
     })
   );
@@ -329,13 +381,16 @@ export async function exportToWord(state) {
   if (draftKeys.length === 0) {
     docChildren.push(
       new Paragraph({
-        children: [new TextRun({ text: "No se registran borradores redactados en la estación de trabajo.", italic: true, size: 18, font: "Arial" })]
+        children: [new TextRun({ 
+          text: isEn ? "No drafted sections registered in the workspace." : "No se registran borradores redactados en la estación de trabajo.", 
+          italic: true, size: 18, font: "Arial" 
+        })]
       })
     );
   } else {
     draftKeys.forEach(secId => {
       const text = drafts[secId];
-      const title = weekTitles[secId] || `Sección ${secId.toUpperCase()}`;
+      const title = weekTitles[secId] || `${isEn ? "Section" : "Sección"} ${secId.toUpperCase()}`;
 
       docChildren.push(
         new Paragraph({
@@ -352,13 +407,16 @@ export async function exportToWord(state) {
 
   docChildren.push(new Paragraph({ text: "", space: { after: 250 } }));
 
-  // SECCIÓN 8: JURADO SIMULADO (FILTRADO MULTI-COMPATIBLE)
+  // SECCIÓN 8: JURADO SIMULADO
   const juryEntries = log.filter(e => e.tipo === "jurado" || e.pregunta || e.foco || e.respuesta);
 
   docChildren.push(
     new Paragraph({
       heading: HeadingLevel.HEADING_2,
-      children: [new TextRun({ text: "8. Bitácora de Sustentación Oral (Jurado Simulado)", bold: true, size: 22, color: "0A2540", font: "Arial" })],
+      children: [new TextRun({ 
+        text: isEn ? "8. Oral Defense Logbook (Simulated Jury)" : "8. Bitácora de Sustentación Oral (Jurado Simulado)", 
+        bold: true, size: 22, color: "0A2540", font: "Arial" 
+      })],
       space: { after: 150 }
     })
   );
@@ -366,33 +424,36 @@ export async function exportToWord(state) {
   if (juryEntries.length === 0) {
     docChildren.push(
       new Paragraph({
-        children: [new TextRun({ text: "No se registran simulaciones de sustentación con el jurado.", italic: true, size: 18, font: "Arial" })]
+        children: [new TextRun({ 
+          text: isEn ? "No simulated jury defense sessions recorded." : "No se registran simulaciones de sustentación con el jurado.", 
+          italic: true, size: 18, font: "Arial" 
+        })]
       })
     );
   } else {
     juryEntries.forEach((j, idx) => {
       const preg = j.pregunta || j.detalles || "—";
       const resp = j.respuesta || "—";
-      const val = j.valoracion || "Evaluada";
+      const val = j.valoracion || (isEn ? "Evaluated" : "Evaluada");
       const plan = j.plan || "—";
 
       docChildren.push(
         new Paragraph({
           children: [
-            new TextRun({ text: `Pregunta ${idx + 1}: `, bold: true, size: 18, color: "0A2540", font: "Arial" }),
+            new TextRun({ text: `${isEn ? "Question" : "Pregunta"} ${idx + 1}: `, bold: true, size: 18, color: "0A2540", font: "Arial" }),
             new TextRun({ text: preg, size: 18, font: "Arial" })
           ]
         }),
         new Paragraph({
           children: [
-            new TextRun({ text: `Respuesta formulada: `, bold: true, size: 18, font: "Arial" }),
+            new TextRun({ text: `${isEn ? "Formulated response: " : "Respuesta formulada: "}`, bold: true, size: 18, font: "Arial" }),
             new TextRun({ text: resp, size: 18, font: "Arial" }),
-            new TextRun({ text: ` [Valoración: ${val}]`, bold: true, color: "059669", size: 18, font: "Arial" })
+            new TextRun({ text: ` [${isEn ? "Assessment" : "Valoración"}: ${val}]`, bold: true, color: "059669", size: 18, font: "Arial" })
           ]
         }),
         new Paragraph({
           children: [
-            new TextRun({ text: `Plan de refuerzo: `, bold: true, italic: true, size: 18, font: "Arial" }),
+            new TextRun({ text: `${isEn ? "Reinforcement plan: " : "Plan de refuerzo: "}`, bold: true, italic: true, size: 18, font: "Arial" }),
             new TextRun({ text: plan, italic: true, size: 18, font: "Arial" })
           ],
           space: { after: 150 }
@@ -403,13 +464,16 @@ export async function exportToWord(state) {
 
   docChildren.push(new Paragraph({ text: "", space: { after: 250 } }));
 
-  // SECCIÓN 9: BITÁCORA DE IA (FILTRADO MULTI-COMPATIBLE)
+  // SECCIÓN 9: BITÁCORA DE IA
   const aiEntries = log.filter(e => e.tipo === "ia" || e.herramienta || e.dictamen || e.tool || e.sec);
 
   docChildren.push(
     new Paragraph({
       heading: HeadingLevel.HEADING_2,
-      children: [new TextRun({ text: "9. Bitácora de Declaración de Inteligencia Artificial Generativa", bold: true, size: 22, color: "0A2540", font: "Arial" })],
+      children: [new TextRun({ 
+        text: isEn ? "9. Generative Artificial Intelligence Usage Logbook" : "9. Bitácora de Declaración de Inteligencia Artificial Generativa", 
+        bold: true, size: 22, color: "0A2540", font: "Arial" 
+      })],
       space: { after: 150 }
     })
   );
@@ -417,28 +481,31 @@ export async function exportToWord(state) {
   if (aiEntries.length === 0) {
     docChildren.push(
       new Paragraph({
-        children: [new TextRun({ text: "No se registran interacciones en la bitácora de IA durante la sesión.", italic: true, size: 18, font: "Arial" })]
+        children: [new TextRun({ 
+          text: isEn ? "No AI log interactions recorded during this session." : "No se registran interacciones en la bitácora de IA durante la sesión.", 
+          italic: true, size: 18, font: "Arial" 
+        })]
       })
     );
   } else {
     aiEntries.forEach((entry, idx) => {
-      const fecha = entry.fecha || entry.timestamp || new Date().toLocaleDateString("es-PE");
-      const seccion = entry.seccion || entry.sec || "Estación de Redacción";
+      const fecha = entry.fecha || entry.timestamp || new Date().toLocaleDateString(isEn ? "en-US" : "es-PE");
+      const seccion = entry.seccion || entry.sec || (isEn ? "Writing Station" : "Estación de Redacción");
       const herramienta = entry.herramienta || entry.tool || "ChatGPT (OpenAI)";
-      const dictamen = entry.dictamen || entry.dec || "Auditado";
-      const decision = entry.decision || entry.why || "Dictamen procesado e incorporado.";
+      const dictamen = entry.dictamen || entry.dec || (isEn ? "Audited" : "Auditado");
+      const decision = entry.decision || entry.why || (isEn ? "Dictamen processed and incorporated." : "Dictamen procesado e incorporado.");
 
       docChildren.push(
         new Paragraph({
           children: [
-            new TextRun({ text: `Registro #${idx + 1} (${fecha}): `, bold: true, size: 18, font: "Arial" }),
-            new TextRun({ text: `Sección: ${seccion} | Herramienta: ${herramienta} | Dictamen: `, size: 18, font: "Arial" }),
+            new TextRun({ text: `${isEn ? "Record" : "Registro"} #${idx + 1} (${fecha}): `, bold: true, size: 18, font: "Arial" }),
+            new TextRun({ text: `${isEn ? "Section" : "Sección"}: ${seccion} | ${isEn ? "Tool" : "Herramienta"}: ${herramienta} | ${isEn ? "Status" : "Dictamen"}: `, size: 18, font: "Arial" }),
             new TextRun({ text: `${dictamen}`, bold: true, color: "059669", size: 18, font: "Arial" })
           ]
         }),
         new Paragraph({
           children: [
-            new TextRun({ text: `Decisión: ${decision}`, italic: true, size: 18, font: "Arial" })
+            new TextRun({ text: `${isEn ? "Decision" : "Decisión"}: ${decision}`, italic: true, size: 18, font: "Arial" })
           ],
           space: { after: 120 }
         })
@@ -449,19 +516,24 @@ export async function exportToWord(state) {
   docChildren.push(new Paragraph({ text: "", space: { after: 300 } }));
 
   // SECCIÓN 10: ANEXO 5
-  const dateStr = new Date().toLocaleDateString("es-PE", { year: "numeric", month: "long", day: "numeric" });
+  const dateStr = new Date().toLocaleDateString(isEn ? "en-US" : "es-PE", { year: "numeric", month: "long", day: "numeric" });
 
   docChildren.push(
     new Paragraph({
       heading: HeadingLevel.HEADING_2,
-      children: [new TextRun({ text: "10. Anexo 5: Declaración Jurada de Uso de IA (Formato USS)", bold: true, size: 22, color: "0A2540", font: "Arial" })],
+      children: [new TextRun({ 
+        text: isEn ? "10. Annex 5: Sworn Declaration on AI Usage (USS Format)" : "10. Anexo 5: Declaración Jurada de Uso de IA (Formato USS)", 
+        bold: true, size: 22, color: "0A2540", font: "Arial" 
+      })],
       space: { after: 150 }
     }),
     new Paragraph({
       alignment: AlignmentType.JUSTIFY,
       children: [
         new TextRun({
-          text: `Yo, ${student.nombre || "________________________________________"}, estudiante de la Escuela Profesional de ${student.escuela || "____________________"} de la Universidad Señor de Sipán, declaro bajo juramento que:`,
+          text: isEn
+            ? `I, ${student.nombre || "________________________________________"}, student of the Professional School of ${student.escuela || "____________________"} at Señor de Sipán University, declare under oath that:`
+            : `Yo, ${student.nombre || "________________________________________"}, estudiante de la Escuela Profesional de ${student.escuela || "____________________"} de la Universidad Señor de Sipán, declaro bajo juramento que:`,
           size: 18,
           font: "Arial"
         })
@@ -472,7 +544,9 @@ export async function exportToWord(state) {
       alignment: AlignmentType.JUSTIFY,
       children: [
         new TextRun({
-          text: `1. He utilizado herramientas de Inteligencia Artificial Generativa (ChatGPT, OpenAI) exclusivamente como soporte de tutoría, revisión metodológica y auditoría de coherencia para la redacción de mi anteproyecto de investigación titulado: "${student.titulo || "________________________________________________________________________________________"}".`,
+          text: isEn
+            ? `1. I have used Generative Artificial Intelligence tools (ChatGPT, OpenAI) exclusively as tutoring, methodological review, and coherence audit support for drafting my research anteproject entitled: "${student.titulo || "________________________________________________________________________________________"}".`
+            : `1. He utilizado herramientas de Inteligencia Artificial Generativa (ChatGPT, OpenAI) exclusivamente como soporte de tutoría, revisión metodológica y auditoría de coherencia para la redacción de mi anteproyecto de investigación titulado: "${student.titulo || "________________________________________________________________________________________"}".`,
           size: 18,
           font: "Arial"
         })
@@ -483,7 +557,9 @@ export async function exportToWord(state) {
       alignment: AlignmentType.JUSTIFY,
       children: [
         new TextRun({
-          text: `2. La herramienta de IA no redactó párrafos finales ni generó datos empíricos, hallazgos o referencias bibliográficas ficticias. Su función se limitó a la evaluación contra los criterios del manual metodológico.`,
+          text: isEn
+            ? `2. The AI tool did not write final paragraphs nor generate fictitious empirical data, findings, or bibliographic references. Its role was limited to evaluating compliance with the methodological manual criteria.`
+            : `2. La herramienta de IA no redactó párrafos finales ni generó datos empíricos, hallazgos o referencias bibliográficas ficticias. Su función se limitó a la evaluación contra los criterios del manual metodológico.`,
           size: 18,
           font: "Arial"
         })
@@ -494,7 +570,9 @@ export async function exportToWord(state) {
       alignment: AlignmentType.JUSTIFY,
       children: [
         new TextRun({
-          text: `3. Se realizaron un total de ${log.length} interacciones de auditoría registradas en la bitácora de la plataforma NEXO Research Studio.`,
+          text: isEn
+            ? `3. A total of ${log.length} audit interactions were conducted and recorded in the NEXO Research Studio platform logbook.`
+            : `3. Se realizaron un total de ${log.length} interacciones de auditoría registradas en la bitácora de la plataforma NEXO Research Studio.`,
           size: 18,
           font: "Arial"
         })
@@ -505,7 +583,9 @@ export async function exportToWord(state) {
       alignment: AlignmentType.JUSTIFY,
       children: [
         new TextRun({
-          text: `4. Todas las fuentes citadas han sido verificadas en sus textos originales, asumiendo la responsabilidad intelectual y ética sobre la totalidad del contenido presentado.`,
+          text: isEn
+            ? `4. All cited sources have been verified in their original texts, assuming full intellectual and ethical responsibility for all presented content.`
+            : `4. Todas las fuentes citadas han sido verificadas en sus textos originales, asumiendo la responsabilidad intelectual y ética sobre la totalidad del contenido presentado.`,
           size: 18,
           font: "Arial"
         })
@@ -527,7 +607,9 @@ export async function exportToWord(state) {
       alignment: AlignmentType.CENTER,
       children: [
         new TextRun({
-          text: "__________________________________________\nFirma del Estudiante / Investigador\nDNI / Código USS: ________________________",
+          text: isEn 
+            ? "__________________________________________\nStudent / Researcher Signature\nID / USS Code: ________________________"
+            : "__________________________________________\nFirma del Estudiante / Investigador\nDNI / Código USS: ________________________",
           size: 18,
           font: "Arial"
         })
@@ -540,8 +622,12 @@ export async function exportToWord(state) {
   });
 
   const blob = await Packer.toBlob(doc);
-  const studentSlug = getCleanStudentFilename(student.nombre);
-  const fileName = `Informe_Anteproyecto_${studentSlug}.docx`;
+  const studentSlug = getCleanStudentFilename(student.nombre, isEn);
+  
+  // Nombre del archivo traducido dinámicamente según idioma
+  const fileName = isEn 
+    ? `Anteproject_Report_${studentSlug}.docx` 
+    : `Informe_Anteproyecto_${studentSlug}.docx`;
 
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
@@ -552,12 +638,18 @@ export async function exportToWord(state) {
 }
 
 export function exportStateToJSON(state) {
+  const isEn = state?.lang === "en";
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
-  const studentSlug = getCleanStudentFilename(state.student?.nombre);
+  const studentSlug = getCleanStudentFilename(state?.student?.nombre, isEn);
   
   const dlAnchor = document.createElement("a");
   dlAnchor.setAttribute("href", dataStr);
-  dlAnchor.setAttribute("download", `Respaldo_NEXO_${studentSlug}.json`);
+  
+  const jsonName = isEn 
+    ? `NEXO_Backup_${studentSlug}.json` 
+    : `Respaldo_NEXO_${studentSlug}.json`;
+
+  dlAnchor.setAttribute("download", jsonName);
   document.body.appendChild(dlAnchor);
   dlAnchor.click();
   dlAnchor.remove();

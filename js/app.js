@@ -3,8 +3,8 @@ import { updateI18nUI } from "./i18n.js";
 import { setupFacultySelects, evaluateCoherenceChain, renderCoherenceChainUI } from "./coherenceChain.js";
 import { renderSankeyChart } from "./sankeyChart.js";
 import { initSectionStudio } from "./sectionStudio.js";
-import { initTheoriesEngine } from "./theoriesEngine.js";
-import { initJurySimulator } from "./jurySimulator.js";
+import { initTheoriesEngine, refreshTheoriesView } from "./theoriesEngine.js";
+import { initJurySimulator, updateJuryPromptView } from "./jurySimulator.js";
 import { initLogAndReport, renderReportView } from "./logAndReport.js";
 import { buildHiloPrompt, buildReportPrompt, formatPromptForChatGPT } from "./aiPrompts.js";
 import { exportToWord, exportStateToJSON, importStateFromJSON } from "./reportExporter.js";
@@ -137,13 +137,16 @@ function populateFormFromState() {
 }
 
 // ==========================================
-// REFRESO GLOBAL DE VISTAS Y COMPONENTES
+// REFRESCO GLOBAL DE VISTAS Y COMPONENTES
 // ==========================================
 function refreshAllViews() {
   window.nexoState = state;
 
+  // Actualizar atributo global de idioma del HTML
+  document.documentElement.lang = state.lang || "es";
+
   // Diagnóstico de eslabones de coherencia
-  const coherenceLinks = evaluateCoherenceChain(state.project);
+  const coherenceLinks = evaluateCoherenceChain(state.project, state.lang);
   renderCoherenceChainUI(
     coherenceLinks,
     document.getElementById("chain"),
@@ -151,11 +154,25 @@ function refreshAllViews() {
     document.getElementById("chainsum")
   );
 
-  // Re-renderizado de la Matriz Sankey con conservación de flujo
-  renderSankeyChart("#sankey-wrapper", state);
+  // Re-renderizado seguro de la Matriz Sankey
+  try {
+    renderSankeyChart("#sankey-wrapper", state);
+  } catch (e) {
+    console.warn("Renderizado de Sankey omitido por visibilidad:", e);
+  }
 
-  // Actualizar prompts dinámicos para ChatGPT
+  // Actualizar prompts dinámicos para ChatGPT en el idioma activo
   updateAIPromptsAndLinks();
+
+  // Refrescar Pestaña 03 (Marcos Teóricos) en el idioma activo
+  if (typeof refreshTheoriesView === "function") {
+    refreshTheoriesView(state);
+  }
+
+  // Sincronizar el prompt del Jurado Simulado en el idioma activo
+  if (typeof updateJuryPromptView === "function") {
+    updateJuryPromptView(state);
+  }
 
   // Actualizar informe consolidado de la pestaña 05
   renderReportView(state);
@@ -182,9 +199,6 @@ function updateAIPromptsAndLinks() {
 // SISTEMA DE MODAL ANIMADO Y REINICIO DE PROYECTO
 // ==========================================
 
-/**
- * Muestra un modal de confirmación con animación fluida en Tailwind CSS
- */
 export function showConfirmModal({ title, body, confirmText = "Confirmar", cancelText = "Cancelar", onConfirm }) {
   const container = document.getElementById("modal-container");
   const box = document.getElementById("modal-box");
@@ -207,7 +221,6 @@ export function showConfirmModal({ title, body, confirmText = "Confirmar", cance
     </button>
   `;
 
-  // Animación de entrada
   container.classList.remove("hidden");
   setTimeout(() => {
     container.classList.remove("opacity-0");
@@ -234,17 +247,22 @@ export function showConfirmModal({ title, body, confirmText = "Confirmar", cance
   if (window.lucide) window.lucide.createIcons();
 }
 
-/**
- * Inicializa los eventos del botón de reinicio global
- */
 function initResetHandlers() {
   const newProjectBtn = document.getElementById("btn-new-project");
   const startMineBtn = document.getElementById("startmine");
 
   const promptReset = () => {
+    const isEn = state.lang === "en";
     showConfirmModal({
-      title: "Reiniciar e Iniciar Nuevo Proyecto",
-      body: `
+      title: isEn ? "Reset & Start New Project" : "Reiniciar e Iniciar Nuevo Proyecto",
+      body: isEn ? `
+        <p class="mb-2">Are you sure you want to erase all data and start a new research project?</p>
+        <ul class="list-disc list-inside space-y-1 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
+          <li>Variables, questions, objectives, and hypotheses in Tab 01 will be cleared.</li>
+          <li>16-week drafting section drafts will be emptied.</li>
+          <li>Simulated jury logs and custom theories will be removed.</li>
+        </ul>
+      ` : `
         <p class="mb-2">¿Está seguro de que desea borrar todos los datos e iniciar una nueva investigación?</p>
         <ul class="list-disc list-inside space-y-1 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
           <li>Se limpiarán las variables, preguntas, objetivos e hipótesis de la Pestaña 01.</li>
@@ -252,8 +270,8 @@ function initResetHandlers() {
           <li>Se eliminarán las bitácoras del jurado simulado y las teorías personalizadas.</li>
         </ul>
       `,
-      confirmText: "Sí, Reiniciar Todo",
-      cancelText: "Cancelar",
+      confirmText: isEn ? "Yes, Reset Everything" : "Sí, Reiniciar Todo",
+      cancelText: isEn ? "Cancel" : "Cancelar",
       onConfirm: resetWholeProject
     });
   };
@@ -262,11 +280,7 @@ function initResetHandlers() {
   if (startMineBtn) startMineBtn.addEventListener("click", promptReset);
 }
 
-/**
- * Ejecuta la limpieza completa del estado en memoria, localStorage y controles DOM
- */
 function resetWholeProject() {
-  // 1. Limpieza del estado en memoria
   state.student = {
     nombre: "",
     facultad: "",
@@ -294,14 +308,12 @@ function resetWholeProject() {
   state.log = [];
   state.customTheories = [];
 
-  // 2. Eliminar respaldo en LocalStorage
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch (e) {
     console.warn("No se pudo limpiar localStorage", e);
   }
 
-  // 3. Vaciar todos los controles DOM de entrada (inputs, selects y textareas)
   document.querySelectorAll("input, textarea, select").forEach(el => {
     if (el.id === "theme-toggle" || el.id === "lang-toggle" || el.id === "thfacultad") return;
     if (el.tagName === "SELECT") {
@@ -311,17 +323,14 @@ function resetWholeProject() {
     }
   });
 
-  // 4. Resetear selectores de facultades y actualizar vistas
   setupFacultySelects(state, () => {
     saveState();
     refreshAllViews();
   });
 
-  // Ocultar banner de ejemplo
   const exflag = document.getElementById("exflag");
   if (exflag) exflag.classList.add("hidden");
 
-  // 5. Refrescar vistas
   refreshAllViews();
 }
 
@@ -345,7 +354,11 @@ function initTheme() {
       document.documentElement.setAttribute("data-theme", state.theme);
       document.documentElement.classList.toggle("dark", state.theme === "dark");
       saveState();
-      renderSankeyChart("#sankey-wrapper", state);
+      try {
+        renderSankeyChart("#sankey-wrapper", state);
+      } catch (e) {
+        console.warn("Sankey omitido en cambio de tema:", e);
+      }
     });
   }
 }
@@ -357,23 +370,65 @@ function initLucideIcons() {
 }
 
 // ==========================================
-// INTERNACIONALIZACIÓN (IDIOMA ES / EN)
+// INTERNACIONALIZACIÓN (CONTROL DE TRADUCCIÓN CON GOOGLE TRANSLATE)
 // ==========================================
 function initI18n() {
   const langBtn = document.getElementById("lang-toggle");
   const langText = document.getElementById("lang-text");
 
-  if (langText) langText.textContent = state.lang.toUpperCase();
-  updateI18nUI(state.lang);
+  document.documentElement.lang = state.lang || "es";
+  if (langText) langText.textContent = (state.lang || "es").toUpperCase();
+  
+  if (typeof updateI18nUI === "function") {
+    updateI18nUI(state.lang);
+  }
+
+  // Si el estado guardado es inglés, dispara la traducción al cargar la página
+  if (state.lang === "en") {
+    triggerGoogleTranslate("en");
+  }
 
   if (langBtn) {
     langBtn.addEventListener("click", () => {
       state.lang = state.lang === "es" ? "en" : "es";
+
+      document.documentElement.lang = state.lang;
       if (langText) langText.textContent = state.lang.toUpperCase();
-      updateI18nUI(state.lang);
+
+      if (typeof updateI18nUI === "function") {
+        updateI18nUI(state.lang);
+      }
+
+      // Dispara el selector del widget de Google Translate y gestiona cookies
+      triggerGoogleTranslate(state.lang);
+
       saveState();
-      renderSankeyChart("#sankey-wrapper", state);
+      refreshAllViews();
     });
+  }
+}
+
+/**
+ * Acciona la traducción mediante cookies e interrupción del widget de Google Translate
+ */
+function triggerGoogleTranslate(lang) {
+  const domain = window.location.hostname;
+  const langPath = lang === 'en' ? '/es/en' : '/es/es';
+
+  // 1. Asignar la cookie oficial de Google Translate
+  document.cookie = `googtrans=${langPath}; path=/;`;
+  if (domain && domain !== "localhost" && domain !== "127.0.0.1") {
+    document.cookie = `googtrans=${langPath}; path=/; domain=${domain}`;
+  }
+
+  // 2. Disparar el evento change en el combo si ya está disponible en el DOM
+  const selectEl = document.querySelector(".goog-te-combo");
+  if (selectEl) {
+    selectEl.value = lang;
+    selectEl.dispatchEvent(new Event("change"));
+  } else {
+    // Si el widget aún se está cargando, reintenta en 300 ms
+    setTimeout(() => triggerGoogleTranslate(lang), 300);
   }
 }
 
@@ -442,7 +497,8 @@ function initExporterEvents() {
       try {
         await exportToWord(state);
       } catch (err) {
-        alert("Error al exportar el documento a Word: " + err.message);
+        const isEn = state.lang === "en";
+        alert((isEn ? "Error exporting Word document: " : "Error al exportar el documento a Word: ") + err.message);
       }
     });
   }
@@ -456,6 +512,8 @@ function initExporterEvents() {
   if (loadJsonInput) {
     loadJsonInput.addEventListener("change", (e) => {
       const file = e.target.files[0];
+      const isEn = state.lang === "en";
+
       importStateFromJSON(file, 
         (importedState) => {
           state = { ...state, ...importedState };
@@ -463,7 +521,7 @@ function initExporterEvents() {
           populateFormFromState();
           refreshAllViews();
           if (bkMsgEl) {
-            bkMsgEl.textContent = "¡Respaldo restaurado con éxito!";
+            bkMsgEl.textContent = isEn ? "Backup restored successfully!" : "¡Respaldo restaurado con éxito!";
             bkMsgEl.className = "text-xs font-mono text-emerald-600 dark:text-emerald-400 font-semibold";
           }
         },

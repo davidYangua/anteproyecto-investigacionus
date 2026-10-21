@@ -1,9 +1,43 @@
+/**
+ * Laboratorio del Anteproyecto - Generador de Prompts Bilingües de IA (ChatGPT)
+ * Archivo: js/aiPrompts.js
+ * Autor / Dirección Metodológica: Ing. Percy Castro Mejía
+ */
 
 import { SECTIONS_DATA } from "../data/sectionsData.js";
 import { MODELS_DATA } from "../data/modelsData.js";
 import { evaluateCoherenceChain } from "./coherenceChain.js";
 
-const SYSTEM_ROLE = `Actúa como tutor de metodología de la investigación científica de la Universidad Señor de Sipán (Perú). Tu objetivo es fomentar el pensamiento crítico y la rigurosidad científica en el estudiante, evaluando objetivamente su trabajo.
+// ==========================================
+// DETECTOR ROBUSTO DE IDIOMA ACTIVO
+// ==========================================
+export function isEnglish(state = {}) {
+  if (typeof document !== "undefined") {
+    // 1. Selector del widget de Google Translate
+    const googCombo = document.querySelector(".goog-te-combo");
+    if (googCombo && googCombo.value) {
+      if (googCombo.value === "en") return true;
+      if (googCombo.value === "es") return false;
+    }
+
+    // 2. Cookie oficial de Google Translate
+    if (document.cookie.includes("googtrans=/es/en") || document.cookie.includes("googtrans=/auto/en")) {
+      return true;
+    }
+    if (document.cookie.includes("googtrans=/es/es") || document.cookie.includes("googtrans=/auto/es")) {
+      return false;
+    }
+  }
+
+  // 3. Estado local o global del sistema
+  const currentLang = state?.lang || window.nexoState?.lang || (typeof document !== "undefined" && document.documentElement.lang) || "es";
+  return currentLang === "en";
+}
+
+// ==========================================
+// ROLES DEL TUTOR IA (SISTEMA) EN ES / EN
+// ==========================================
+const SYSTEM_ROLE_ES = `Actúa como tutor de metodología de la investigación científica de la Universidad Señor de Sipán (Perú). Tu objetivo es fomentar el pensamiento crítico y la rigurosidad científica en el estudiante, evaluando objetivamente su trabajo.
 
 REGLAS DE EVALUACIÓN:
 - No reescribas la sección ni entregues párrafos listos para copiar y pegar. Señala, cita textualmente y explica.
@@ -11,14 +45,53 @@ REGLAS DE EVALUACIÓN:
 - Respeta los criterios del manual metodológico y los productos esperados.
 - Responde siempre en español, con un trato profesional y académico.`;
 
+const SYSTEM_ROLE_EN = `Act as a scientific research methodology tutor at Señor de Sipán University (Peru). Your goal is to foster critical thinking and scientific rigor in the student by objectively evaluating their work.
+
+EVALUATION RULES:
+- Do not rewrite the section or provide ready-made copy-paste paragraphs. Point out, quote textually, and explain.
+- Support every judgment with a direct textual quote from the presented draft.
+- Adhere strictly to the criteria of the methodological manual and expected deliverables.
+- Always respond in English, maintaining a professional and academic tone.`;
+
 /**
- * Genera los metadatos globales del proyecto en formato JSON para la IA
+ * Genera los metadatos globales del proyecto en formato JSON bilingüe para la IA
  * @param {Object} state 
  * @returns {Object}
  */
 export function buildMetadataJSON(state = {}) {
+  const isEn = isEnglish(state);
   const student = state.student || {};
   const project = state.project || {};
+
+  if (isEn) {
+    return {
+      institution: "Señor de Sipán University (USS)",
+      course: "Scientific Research Methodology",
+      student: {
+        name: student.nombre || "Not specified",
+        faculty: student.facultad || "Not specified",
+        school: student.escuela || "Not specified",
+        section: student.seccion || "Not specified",
+        preliminary_title: student.titulo || "Not specified"
+      },
+      core_elements: {
+        variable_1: project.v1 || "Not declared",
+        variable_2_outcome: project.v2 || "Not declared",
+        population: project.pob || "Not declared",
+        scope_location: project.amb || "Not declared",
+        period: project.per || "Not declared",
+        methodological_approach: project.enf || "cuanti",
+        general_question: project.preg || "Not declared",
+        main_theory: project.teo || "Not declared",
+        general_objective: project.obj || "Not declared",
+        alternative_hypothesis: project.hip || "Not declared",
+        scope_design: project.dis || "Not declared",
+        instrument_v1: project.i1 || "Not declared",
+        instrument_v2: project.i2 || "Not declared"
+      },
+      evaluation_date: new Date().toLocaleDateString("en-US")
+    };
+  }
 
   return {
     institucion: "Universidad Señor de Sipán (USS)",
@@ -50,15 +123,34 @@ export function buildMetadataJSON(state = {}) {
 }
 
 /**
- * Genera el prompt para auditar el Hilo de Coherencia
+ * Genera el prompt para auditar el Hilo de Coherencia (Pestaña 01)
  * @param {Object} state 
  * @returns {string}
  */
 export function buildHiloPrompt(state = {}) {
+  const isEn = isEnglish(state);
+  const systemRole = isEn ? SYSTEM_ROLE_EN : SYSTEM_ROLE_ES;
   const metadata = buildMetadataJSON(state);
-  const coherenceEvaluation = evaluateCoherenceChain(state.project || {});
+  const coherenceEvaluation = evaluateCoherenceChain(state.project || {}, isEn ? "en" : "es");
 
-  return `${SYSTEM_ROLE}
+  if (isEn) {
+    return `${systemRole}
+
+TASK: Audit the internal coherence of the core elements of the research anteproject.
+
+PROJECT METADATA AND CORE ELEMENTS (JSON):
+${JSON.stringify(metadata, null, 2)}
+
+AUTOMATED LINK EVALUATION:
+${JSON.stringify(coherenceEvaluation, null, 2)}
+
+STRUCTURE OF YOUR RESPONSE:
+1. Logical Coherence Audit: Review alignment between General Question, Main Theory, General Objective, Hypothesis, and Methodological Design.
+2. Inconsistencies Detected: List up to 3 critical inconsistencies in terms, variables, or scope.
+3. Key Reflection Question: Formulate the main question the student must resolve before moving forward.`;
+  }
+
+  return `${systemRole}
 
 TAREA: Audita la coherencia interna de los elementos núcleo del anteproyecto de investigación.
 
@@ -75,30 +167,66 @@ ESTRUCTURA DE TU RESPUESTA:
 }
 
 /**
- * Genera el prompt para auditar una sección específica de la ruta
+ * Genera el prompt para auditar una sección específica de la ruta (Pestaña 02)
  * @param {string} secId 
  * @param {Object} state 
  * @returns {string}
  */
 export function buildSectionPrompt(secId, state = {}) {
+  const isEn = isEnglish(state);
+  const systemRole = isEn ? SYSTEM_ROLE_EN : SYSTEM_ROLE_ES;
+
   const sec = SECTIONS_DATA.find(s => s.id === secId);
   const model = MODELS_DATA ? MODELS_DATA[secId] : null;
   const draft = (state.drafts && state.drafts[secId]) || "";
   const metadata = buildMetadataJSON(state);
 
-  if (!sec) return "Sección no encontrada.";
+  if (!sec) return isEn ? "Section not found." : "Sección no encontrada.";
 
-  return `${SYSTEM_ROLE}
+  const titleText = isEn && sec.title_en ? sec.title_en : sec.title;
+  const prodText = isEn && sec.prod_en ? sec.prod_en : sec.prod;
+  const testText = isEn && sec.test_en ? (sec.test_en || sec.prueba) : sec.prueba;
+  const criteriaArr = isEn && sec.crit_en ? sec.crit_en : sec.crit;
 
-SECCIÓN A AUDITAR: [${sec.code}] ${sec.title} (${sec.wk})
-PRODUCTO ESPERADO: ${sec.prod}
-PRUEBA CRÍTICA: ${sec.prueba}
+  if (isEn) {
+    return `${systemRole}
+
+SECTION TO AUDIT: [${sec.code}] ${titleText} (${sec.wk})
+EXPECTED DELIVERABLE: ${prodText}
+CRITICAL VALIDATION TEST: ${testText}
+
+PROJECT METADATA (JSON):
+${JSON.stringify(metadata, null, 2)}
+
+MANUAL EVALUATION CRITERIA:
+${criteriaArr.map((c, i) => `${i + 1}.${c}`).join("\n")}
+
+${model && model.steps ? `EXPECTED PARAGRAPH SEQUENCE:\n${model.steps.map((s, i) => `${i + 1}. ${s[0]}: ${s[1]}`).join("\n")}` : ""}
+
+STUDENT'S PRESENTED DRAFT:
+"""
+${draft || "(The student has not drafted this section yet)"}
+"""
+
+DELIVER YOUR RESPONSE IN THIS EXACT FORMAT:
+1. Criteria Table: No. | Criterion | Status (Complies / Partial / Does not comply) | Direct Textual Evidence Quote | Observation
+2. Structure Analysis: Evaluation of thematic paragraph sequence.
+3. Priority Corrections (Max 3): Location, concrete issue, and recommended action (without writing the draft for the student).
+4. Mandatory Final Line (Dictamen in exact format):
+DICTAMEN: 1=C; 2=P; 3=N... (One status value for each of the ${criteriaArr.length} criteria).`;
+  }
+
+  return `${systemRole}
+
+SECCIÓN A AUDITAR: [${sec.code}] ${titleText} (${sec.wk})
+PRODUCTO ESPERADO: ${prodText}
+PRUEBA CRÍTICA: ${testText}
 
 METADATOS DEL PROYECTO (JSON):
 ${JSON.stringify(metadata, null, 2)}
 
 CRITERIOS DE EVALUACIÓN DEL MANUAL:
-${sec.crit.map((c, i) => `${i + 1}.${c}`).join("\n")}
+${criteriaArr.map((c, i) => `${i + 1}.${c}`).join("\n")}
 
 ${model && model.steps ? `ORDEN ESPERADO DE PÁRRAFOS:\n${model.steps.map((s, i) => `${i + 1}. ${s[0]}: ${s[1]}`).join("\n")}` : ""}
 
@@ -112,19 +240,131 @@ ENTREGA TU RESPUESTA CON ESTE FORMATO EXACTO:
 2. Análisis de Estructura: Evaluación de la secuencia temática de los párrafos.
 3. Correcciones Prioritarias (Máx 3): Ubicación, problema concreto y acción recomendada (sin redactar por el estudiante).
 4. Línea Final Obligatoria (Dictamen en formato exacto):
-DICTAMEN: 1=C; 2=P; 3=N... (Un valor por cada uno de los ${sec.crit.length} criterios).`;
+DICTAMEN: 1=C; 2=P; 3=N... (Un valor por cada uno de los ${criteriaArr.length} criterios).`;
 }
 
 /**
- * Genera el prompt para la auditoría completa del informe
+ * Genera el prompt para consultar teorías/autores sobre una variable sin coincidencias (Pestaña 03)
+ * @param {string} variableName 
+ * @param {Object} state 
+ * @returns {string}
+ */
+export function buildTheoryQueryPrompt(variableName, state = {}) {
+  const isEn = isEnglish(state);
+  const systemRole = isEn ? SYSTEM_ROLE_EN : SYSTEM_ROLE_ES;
+  const faculty = state.student?.facultad || (isEn ? "Not specified" : "No especificada");
+  const school = state.student?.escuela || (isEn ? "Not specified" : "No especificada");
+  const targetVar = variableName || (isEn ? "General Variable" : "Variable General");
+
+  if (isEn) {
+    return `${systemRole}
+
+TASK: Suggest scientific theories and seminal authors for a research anteproject variable.
+
+TARGET VARIABLE: "${targetVar}"
+FACULTY / SCHOOL: ${faculty} - ${school}
+
+Please provide:
+1. Top 3-4 recognized scientific theories or explanatory conceptual models for this variable.
+2. Seminal Author(s) and seminal publication year for each theory.
+3. Main dimensions or components measured by each model.
+4. Recommendation on how to operationalize this variable in an empirical study.`;
+  }
+
+  return `${systemRole}
+
+TAREA: Recomienda teorías científicas y autores fundamentales para la siguiente variable de investigación.
+
+VARIABLE DE INTERÉS: "${targetVar}"
+FACULTAD / ESCUELA: ${faculty} - ${school}
+
+Por favor proporciona:
+1. Las 3 a 4 principales teorías científicas o modelos conceptuales reconocidos que sustenten esta variable.
+2. Autores principales y año de publicación seminal para cada teoría.
+3. Dimensiones o componentes clave que componen cada modelo.
+4. Recomendación sobre cómo operacionalizar esta variable en un estudio empírico.`;
+}
+
+/**
+ * Genera el prompt para iniciar la simulación del Jurado Evaluador (Pestaña 04)
+ * @param {string} focus 
+ * @param {string} level 
+ * @param {Object} state 
+ * @returns {string}
+ */
+export function buildJuryPrompt(focus = "general", level = "exigente", state = {}) {
+  const isEn = isEnglish(state);
+  const metadata = buildMetadataJSON(state);
+
+  const focusMapEn = {
+    "Coherencia General": "General Anteproject Coherence",
+    "Planteamiento del Problema": "Problem Statement & Contextualization",
+    "Marco Teórico": "Theoretical Framework & Conceptual Models",
+    "Metodología y Diseño": "Methodology, Design & Sampling",
+    "Instrumentos de Medición": "Data Collection Instruments & Validity"
+  };
+
+  const currentFocus = isEn ? (focusMapEn[focus] || focus) : focus;
+  const levelText = isEn
+    ? (level === "exigente" ? "High Degree Defense (Demanding)" : "Formative Assessment (Guiding)")
+    : (level === "exigente" ? "Defensa Real de Grado (Exigente)" : "Evaluación Formativa (Guía)");
+
+  if (isEn) {
+    return `Act as a strict and expert Methodological Jury Panel member at Señor de Sipán University.
+Evaluation level: ${levelText}.
+Focus area: ${currentFocus}.
+
+PROJECT METADATA (JSON):
+${JSON.stringify(metadata, null, 2)}
+
+INSTRUCTIONS FOR THE JURY SIMULATION:
+1. Formulate Round 1 with 2 incisive methodological questions questioning the coherence between problem, objectives, and methodology.
+2. Wait for my response before proceeding to Round 2 and Round 3.
+3. Maintain a formal academic tone throughout the defense. Speak in English.`;
+  }
+
+  return `Actúa como un Jurado Evaluador Metodológico estricto de la Universidad Señor de Sipán.
+Nivel de exigencia: ${levelText}.
+Foco prioritario de evaluación: ${focus}.
+
+METADATOS DEL ANTEPROYECTO (JSON):
+${JSON.stringify(metadata, null, 2)}
+
+INSTRUCCIONES PARA LA SIMULACIÓN:
+1. Formula la Ronda 1 con 2 preguntas metodológicas incisivas cuestionando la coherencia entre el problema, los objetivos y el diseño.
+2. Espera mi respuesta antes de avanzar a las Rondas 2 y 3.
+3. Mantén un tono formal, académico y riguroso. Responde en español.`;
+}
+
+/**
+ * Genera el prompt para la auditoría completa del informe (Pestaña 05)
  * @param {Object} state 
  * @returns {string}
  */
 export function buildReportPrompt(state = {}) {
+  const isEn = isEnglish(state);
+  const systemRole = isEn ? SYSTEM_ROLE_EN : SYSTEM_ROLE_ES;
   const metadata = buildMetadataJSON(state);
   const drafts = state.drafts || {};
 
-  return `${SYSTEM_ROLE}
+  if (isEn) {
+    return `${systemRole}
+
+TASK: Perform a comprehensive audit of the entire presented research anteproject.
+
+PROJECT METADATA (JSON):
+${JSON.stringify(metadata, null, 2)}
+
+AVAILABLE DRAFTS:
+${JSON.stringify(drafts, null, 2)}
+
+STRUCTURE OF YOUR EVALUATION:
+1. General Anteproject Diagnosis: Overall methodological strengths and weaknesses.
+2. Alignment and Traceability: Correspondence between Chapter I and Chapter II.
+3. Prioritized Correction Plan: Urgent recommended actions ordered by impact.`;
+  }
+
+  return `${systemRole}
 
 TAREA: Realiza una auditoría integral de todo el anteproyecto de investigación presentado.
 
@@ -137,7 +377,7 @@ ${JSON.stringify(drafts, null, 2)}
 ESTRUCTURA DE TU EVALUACIÓN:
 1. Diagnóstico General del Anteproyecto: Fortalezas y debilidades metodológicas globales.
 2. Alineación y Trazabilidad: Correspondencia entre el Capítulo I y Capítulo II.
-3. Plan Prioritado de Correcciones: Acciones urgentes recomendadas ordenadas por impacto.`;
+3. Plan Prioritizado de Correcciones: Acciones urgentes recomendadas ordenadas por impacto.`;
 }
 
 /**

@@ -1,3 +1,39 @@
+/* ==========================================
+   OCULTAR BARRA SUPERIOR Y DIÁLOGOS DE GOOGLE TRANSLATE
+   ========================================== */
+
+/* 1. Ocultar iframes, banners y clases ofuscadas modernas de Google */
+.goog-te-banner-frame,
+.goog-te-banner,
+.goog-te-balloon-frame,
+#goog-gt-tt,
+.goog-te-spinner-pos,
+.VIpgJd-yA0T3d-y632b-rT3B4b,
+iframe[id*=":1.container"],
+iframe.goog-te-banner-frame {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* 2. Ocultar la barra inyectada excepto nuestro contenedor del widget */
+.skiptranslate:not(#google_translate_element) {
+  display: none !important;
+}
+
+/* 3. Evitar que Google empuje la página 40px hacia abajo */
+html, body {
+  top: 0px !important;
+  position: static !important;
+}
+
+/* 4. Desactivar el resaltado amarillo cuando se pasa el cursor sobre el texto traducido */
+.goog-text-highlight {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
