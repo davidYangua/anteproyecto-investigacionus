@@ -1,70 +1,109 @@
-# 📚 Sistema de Anteproyectos de Investigación
+# 🎓 Laboratorio del Anteproyecto
 
-Plataforma para **organizar, elaborar y dar seguimiento a anteproyectos de investigación**. El proyecto busca reunir la información académica de cada propuesta y facilitar su consulta y revisión durante las distintas etapas de trabajo.
+Plataforma web multidisciplinaria para el diseño metodológico, auditoría de coherencia científica, gestión de marcos teóricos por facultades y simulación de sustentaciones orales para proyectos de investigación.
 
-## 🎯 Propósito
+---
 
-Un anteproyecto presenta de forma ordenada una investigación que se desea realizar: qué problema aborda, por qué es importante, qué objetivos persigue y cómo se llevará a cabo. Este sistema está pensado para apoyar la gestión de esas propuestas en un espacio centralizado, desde su registro hasta su revisión y actualización.
+## 📌 Visión General
 
-## ✨ Funcionalidades
+Un entorno interactivo y bilingüe (**Español / Inglés**) desarrollado para guiar a los estudiantes de nivel universitario en el proceso de estructuración, redacción y defensa de anteproyectos de tesis e investigación científica. 
 
-- 📝 **Registro y edición de propuestas:** mantener los datos generales y el contenido de cada anteproyecto.
-- 🧩 **Organización de apartados:** estructurar la información académica, como título, planteamiento del problema, objetivos, justificación, marco teórico y metodología.
-- 📋 **Consulta de propuestas:** acceder a la información registrada y revisar el contenido de cada proyecto.
-- 🔄 **Seguimiento del proceso:** identificar el estado o avance de las propuestas conforme al flujo de trabajo configurado.
-- 💬 **Observaciones y revisión:** documentar comentarios que ayuden a orientar ajustes y mejoras.
-- 👥 **Participantes y roles:** asociar a las personas involucradas y definir qué acciones puede realizar cada perfil, si esta función está habilitada.
-- 🔎 **Búsqueda y organización:** facilitar la localización de propuestas mediante los criterios disponibles en la aplicación.
+La plataforma integra herramientas de análisis de flujo, auditoría lógica asistida por Inteligencia Artificial (Tutor IA / ChatGPT) y un sistema de exportación ejecutiva a documentos Word (`.docx`), asegurando la trazabilidad y consistencia entre el problema, los objetivos, la teoría y la metodología.
 
-> Las funcionalidades efectivamente disponibles dependen de la implementación actual del repositorio. Esta descripción presenta el propósito funcional del proyecto, no garantiza que cada módulo esté terminado.
+---
 
-## 🔁 Flujo general
+## ✨ Funcionalidades Principales
 
-1. Registrar una propuesta y completar sus datos iniciales.
-2. Desarrollar y organizar sus apartados académicos.
-3. Consultar el avance y compartirla para revisión, según el flujo configurado.
-4. Incorporar observaciones y actualizar el contenido.
-5. Dar seguimiento hasta completar las etapas definidas para la propuesta.
+El sistema está dividido en **5 estaciones metodológicas** accesibles desde la barra de navegación principal:
 
-## 🗂️ Estructura del proyecto
+### 1. 🔗 Hilo de Coherencia Metodológica
+* **Matriz de Núcleo Temático:** Registro dinámico de Variables, Población, Ámbito, Periodo, Enfoque (Cuantitativo/Cualitativo/Mixto), Alcance y Diseño.
+* **Auditoría Automática de 6 Eslabones:** Evaluación en tiempo real del nivel de solidez y alineación entre la pregunta de investigación, la teoría principal, el objetivo general, la hipótesis y los instrumentos.
+* **Diagrama Sankey de Trazabilidad:** Visualización gráfica e interactiva de la conservación de flujo desde el Nivel Macro (Variables) hasta el Nivel Micro (Ítems/Indicadores) con protección anti-corrupción SVG.
+* **Integración con IA:** Generación de prompts estructurados en JSON para auditar la coherencia global del estudio en ChatGPT.
 
-La estructura real debe confirmarse en los archivos del repositorio. Como orientación, un sistema de este tipo puede organizarse así:
+### 2. ✍️ Estación de Redacción (Ruta de 16 Semanas)
+* **Navegación Guiada:** Planificador semanal estructurado para la elaboración del capítulo de Planteamiento del Problema y Marco Metodológico.
+* **Modelos y Plantillas:** Consulta de secuencias lógicas de párrafos, fórmulas de redacción y ejemplos anotados.
+* **Lienzo de Redacción:** Editor con guardado automático local en el navegador.
+* **Prueba Crítica y Checklists:** Criterios de autoevaluación metodológica paso a paso.
+* **Calibración de Dictámenes IA:** Lector de respuestas de IA para categorizar criterios cumplidos (`C`), parciales (`P`) o no cumplidos (`N`).
+
+### 3. 📚 Marcos Teóricos por Facultad
+* **Catálogo Multidisciplinario:** Base de datos de teorías y modelos conceptuales filtrables por facultades universales (Salud, Ingeniería, Empresariales, Derecho y Humanidades).
+* **Recomendador de Teorías por Variable:** Coincidencia inteligente entre la variable de resultado del proyecto y los modelos conceptuales disponibles.
+* **Incorporación de Teorías Personalizadas:** Formulario para registrar teorías específicas creadas o adaptadas por el investigador.
+* **Asistente de Búsqueda IA:** Generación dinámica de prompts bilingües para consultar teorías no encontradas directamente en ChatGPT.
+
+### 4. ⚖️ Jurado Simulado (Sustentación Oral)
+* **Simulador de Defensa:** Configuración de rondas de interrogación técnica según la sección del anteproyecto (Planteamiento, Marco Teórico, Metodología, Instrumentos o Coherencia General).
+* **Niveles de Exigencia:** Selección entre modo *Formativo* (orientador) o modo *Exigente* (defensa real de grado).
+* **Bitácora de Sustentación:** Registro formal de preguntas planteadas por el jurado, respuestas formuladas, valoración de solidez y plan de refuerzo pre-defensa.
+
+### 5. 📋 Bitácora e Informe Consolidado
+* **Resumen Ejecutivo:** Diagnóstico gráfico del avance de redacción mediante mapa de calor (*heatmap*) de las 16 semanas.
+* **Declaración de Uso de IA (Anexo 5):** Generación automática del borrador normativo sobre la transparencia en el uso de herramientas conversacionales.
+* **Respaldo Local JSON:** Funcionalidad para exportar e importar el estado completo del proyecto para continuar en diferentes dispositivos.
+* **Exportador a Word (`.docx`):** Descarga de informe estructurado y bilingüe con tablas nativas, auditoría de eslabones y registro de bitácora.
+
+---
+
+## 🌐 Sistema Bilingüe (ES / EN)
+
+El sistema cuenta con un conmutador reactivo de idioma en el encabezado (`ES` / `EN`):
+* **Sincronización Híbrida:** Integra cookies nativas de Google Translate (`googtrans`), atributos `lang` en el DOM y lógica personalizada en JavaScript.
+* **Prompts de IA Dinámicos:** Todas las consultas enviadas a ChatGPT (Hilo de coherencia, Redacción, Marcos Teóricos, Jurado Simulado e Informe) traducen sus metadatos, tareas e instrucciones al inglés o español según el modo activo.
+* **Reporte Word Adaptativo:** La exportación a `.docx` genera los encabezados, estados de auditoría y secciones en el idioma seleccionado.
+
+---
+
+## 🛠️ Tecnologías Utilizadas
+
+| Categoría | Tecnología / Librería | Uso principal |
+| :--- | :--- | :--- |
+| **Frontend** | HTML5 / JavaScript (ES Modules) | Estructura semántica y lógica modular |
+| **Estilos** | Tailwind CSS (via CDN) | Diseño responsivo y modo oscuro |
+| **Tipografía** | Google Fonts (*Plus Jakarta Sans*, *Source Sans 3*, *IBM Plex Mono*) | Jerarquía visual clara y legible |
+| **Iconografía** | Lucide Icons | Interfaz de usuario limpia e intuitiva |
+| **Gráficos** | Google Charts Loader (Sankey Diagram) | Diagrama de flujo de operacionalización |
+| **Exportación** | Docx.js (v8.5.0 UMD) | Generación cliente de reportes `.docx` |
+| **Traducción** | Google Translate Element API | Motor de internacionalización |
+
+---
+
+## 📂 Estructura del Proyecto
 
 ```text
-anteproyecto-investigacionus/
-├── README.MD          # Información general y guía del proyecto
-├── frontend/          # Interfaz de usuario (si aplica)
-├── backend/           # Servicios y lógica de aplicación (si aplica)
-├── database/          # Esquemas y migraciones (si aplica)
-├── docs/              # Documentación complementaria (si existe)
-└── tests/             # Pruebas del sistema (si existen)
+├── index.html                  # Interfaz principal de la aplicación (Single Page App)
+├── css/
+│   ├── custom.css              # Estilos personalizados y overrides de Tailwind/Google Translate
+│   └── variables.css           # Variables de temas CSS (colores, sombras, fuentes)
+├── js/
+│   ├── app.js                  # Módulo principal y orquestador del estado global
+│   ├── aiPrompts.js            # Generador de prompts bilingües para ChatGPT
+│   ├── coherenceChain.js       # Evaluador de la cadena de coherencia y selectores en cascada
+│   ├── i18n.js                 # Diccionario y traducciones locales UI
+│   ├── jurySimulator.js        # Lógica de la pestaña Jurado Simulado
+│   ├── logAndReport.js         # Renderizado del informe consolidado y mapa de calor
+│   ├── reportExporter.js       # Exportador a documentos Word (.docx) y respaldos JSON
+│   ├── sankeyChart.js          # Renderizado seguro del diagrama Sankey
+│   ├── sectionStudio.js        # Lógica del canvas de redacción de las 16 semanas
+│   └── theoriesEngine.js       # Buscador y recomendador de marcos teóricos
+└── data/
+    ├── facultiesData.js        # Catálogo de facultades y escuelas profesionales
+    ├── modelsData.js           # Plantillas y fórmulas metodológicas de redacción
+    ├── sectionsData.js         # Estructura de las 16 semanas y criterios de evaluación
+    └── theoriesData.js         # Catálogo base de teorías y modelos conceptuales
 ```
 
-Los directorios pueden tener otros nombres o no existir, dependiendo de las tecnologías y la organización elegidas para el proyecto.
+### Ejecución Local
 
-## ⚙️ Instalación y ejecución
-
-Los pasos y comandos dependen del stack tecnológico, que debe identificarse en los archivos de configuración del repositorio. Para preparar el proyecto:
-
-1. Revisa los archivos de configuración y las instrucciones incluidas en cada módulo.
-2. Instala las herramientas y dependencias indicadas por el proyecto.
-3. Configura las variables de entorno necesarias; utiliza un archivo de ejemplo como referencia si está disponible.
-4. Prepara la base de datos o ejecuta migraciones si la aplicación las utiliza.
-5. Ejecuta los comandos de desarrollo y pruebas definidos por el proyecto.
-
-No se especifican comandos ni tecnologías aquí para evitar indicar instrucciones incompatibles con la configuración real.
-
-## 🔐 Consideraciones de seguridad
-
-- No incluyas contraseñas, tokens ni claves privadas en el repositorio.
-- Utiliza datos ficticios para pruebas y desarrollo.
-- Protege la información personal y académica de acuerdo con las políticas aplicables.
-- Limita el acceso a las propuestas según los permisos que defina la aplicación.
-
-## 📌 Estado y documentación
-
-El alcance puede evolucionar durante el desarrollo. Para conocer las funciones disponibles, los requisitos y las instrucciones vigentes, consulta el código, los archivos de configuración y la documentación existente en el repositorio.
-
-## 📄 Licencia
-
-Consulta los archivos del proyecto para conocer las condiciones de uso y distribución aplicables.
+1. Clona el repositorio en tu máquina local:
+   ```bash
+   git clone [https://github.com/tu-usuario/nombre-repositorio.git](https://github.com/tu-usuario/nombre-repositorio.git)
+   ```
+2. Navega al directorio del proyecto:
+   ```bash
+   cd nombre-repositorio
+   ```
+3. Abre el archivo `index.html` en tu navegador web favorito (o utiliza una extensión de servidor local como *Live Server* en VS Code).
